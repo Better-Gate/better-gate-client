@@ -1540,7 +1540,11 @@ export function BetterGateToolConnectPage({
   }, [tool.id]);
 
   useEffect(() => {
-    if (!selectedWorkspaceId) {
+    if (
+      !selectedWorkspaceId ||
+      !selectedWorkspace ||
+      selectedWorkspace.id !== selectedWorkspaceId
+    ) {
       setApiKeys([]);
       setRouteGroups([]);
       setSelectedApiKeyId(null);
@@ -1548,7 +1552,7 @@ export function BetterGateToolConnectPage({
     }
 
     void loadApiKeys(selectedWorkspaceId);
-  }, [loadApiKeys, selectedWorkspaceId]);
+  }, [loadApiKeys, selectedWorkspace, selectedWorkspaceId]);
 
   const openCreateDialog = (mode: CreateMode) => {
     setCreateMode(mode);
@@ -2413,7 +2417,7 @@ export function BetterGateToolConnectPage({
               const directImportable =
                 isBetterGateApiKeyDirectlyImportable(apiKey);
               const imported = importedApiKeyIds.has(apiKey.id);
-              const showCheck = imported || (!importedApiKeyIds.size && selected);
+              const showCheck = imported;
               const apiKeyRouteGroup = routeGroupKey(apiKey.routeGroup);
               const routeGroupLabel =
                 routeGroupLabels.get(apiKeyRouteGroup) ?? apiKeyRouteGroup;

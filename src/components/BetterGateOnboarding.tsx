@@ -746,14 +746,18 @@ export function BetterGateOnboarding({
   }, [loadUser, loadWorkspaces]);
 
   useEffect(() => {
-    if (!selectedWorkspaceId) {
+    if (
+      !selectedWorkspaceId ||
+      !selectedWorkspace ||
+      selectedWorkspace.id !== selectedWorkspaceId
+    ) {
       setApiKeys([]);
       setSelectedApiKeyId(null);
       return;
     }
 
     void loadApiKeys(selectedWorkspaceId);
-  }, [loadApiKeys, selectedWorkspaceId]);
+  }, [loadApiKeys, selectedWorkspace, selectedWorkspaceId]);
 
   useEffect(() => {
     localStorage.setItem(

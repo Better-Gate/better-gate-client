@@ -622,7 +622,7 @@ function HomeUsagePanel({
           <div>
             <div className="flex items-center gap-2 text-xs font-medium text-neutral-400">
               <Wallet className="h-3.5 w-3.5" />
-              可用余额
+              可用额度
             </div>
             <div className="mt-2 flex items-center gap-2">
               <p className="truncate text-2xl font-semibold leading-none tracking-normal text-neutral-950 dark:text-neutral-50">
@@ -930,9 +930,16 @@ export function BetterGateDashboard() {
       return;
     }
 
+    if (
+      !workspaces.length ||
+      !workspaces.some((workspace) => workspace.id === selectedWorkspaceId)
+    ) {
+      return;
+    }
+
     localStorage.setItem(SELECTED_WORKSPACE_KEY, selectedWorkspaceId);
     void loadSummary(selectedWorkspaceId);
-  }, [loadSummary, selectedWorkspaceId]);
+  }, [loadSummary, selectedWorkspaceId, workspaces]);
 
   useEffect(() => {
     if (isBetterGateDesktopPreview()) {
@@ -959,11 +966,8 @@ export function BetterGateDashboard() {
     await Promise.all([
       loadWorkspaces(),
       loadToolStatuses(),
-      selectedWorkspaceId
-        ? loadSummary(selectedWorkspaceId)
-        : Promise.resolve(),
     ]);
-  }, [loadSummary, loadToolStatuses, loadWorkspaces, selectedWorkspaceId]);
+  }, [loadToolStatuses, loadWorkspaces]);
 
   useEffect(() => {
     const refreshWhenVisible = () => {

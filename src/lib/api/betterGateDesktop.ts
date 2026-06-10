@@ -119,7 +119,12 @@ export interface BetterGateDesktopUsageSummaryResponse {
   timeZone: string;
 }
 
-const DEFAULT_SAAS_URL = "https://app.better-gate.com";
+const PRODUCTION_SAAS_URL = "https://app.better-gate.com";
+const DEVELOPMENT_SAAS_URL =
+  import.meta.env.VITE_BETTER_GATE_SAAS_URL?.trim() || "http://localhost:3000";
+const DEFAULT_SAAS_URL = import.meta.env.DEV
+  ? DEVELOPMENT_SAAS_URL
+  : PRODUCTION_SAAS_URL;
 const BETTER_GATE_REQUEST_TIMEOUT_MS = 15_000;
 const PREVIEW_TOKEN = "better-gate-dev-preview-token";
 
@@ -131,15 +136,16 @@ export const BETTER_GATE_DESKTOP_SIGNED_OUT_EVENT =
 export function getBetterGateSaasUrl() {
   const storedUrl = localStorage.getItem(BETTER_GATE_SAAS_URL_KEY)?.trim();
 
-  if (
-    storedUrl &&
-    !storedUrl.includes("localhost") &&
-    !storedUrl.includes("127.0.0.1")
-  ) {
-    return storedUrl.replace(/\/$/, "");
-  }
-
   if (storedUrl) {
+    const normalizedUrl = storedUrl.replace(/\/$/, "");
+    const isLocalUrl =
+      normalizedUrl.includes("localhost") ||
+      normalizedUrl.includes("127.0.0.1");
+
+    if (import.meta.env.DEV || !isLocalUrl) {
+      return normalizedUrl;
+    }
+
     localStorage.removeItem(BETTER_GATE_SAAS_URL_KEY);
   }
 
@@ -308,7 +314,8 @@ function buildPreviewUsageSummary(input: {
     balance: {
       availableBalanceCents: workspace.availableBalanceCents,
       workspaceBalanceCents: workspace.availableBalanceCents,
-      scope: workspace.type === "organization" ? "organization" : "personal",
+      scope:
+        workspace.type === "organization" ? "member_allocation" : "personal",
     },
     usage: {
       today,
