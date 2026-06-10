@@ -92,22 +92,12 @@ jobs:
             exit 1
           fi
 
-          raw="$RAW_TAURI_SIGNING_PRIVATE_KEY"
-          key_path="$RUNNER_TEMP/tauri-signing.key"
-
-          if printf '%s' "$raw" | grep -q '^untrusted comment:'; then
-            printf '%s\n' "$raw" > "$key_path"
-          elif decoded=$(printf '%s' "$raw" | (base64 --decode 2>/dev/null || base64 -D 2>/dev/null)) && printf '%s' "$decoded" | grep -q '^untrusted comment:'; then
-            printf '%s\n' "$decoded" > "$key_path"
-          else
-            printf '%s\n%s\n' "untrusted comment: tauri signing key" "$raw" > "$key_path"
+          raw="$(printf '%s' "$RAW_TAURI_SIGNING_PRIVATE_KEY" | tr -d '[:space:]')"
+          if printf '%s' "$RAW_TAURI_SIGNING_PRIVATE_KEY" | grep -q '^untrusted comment:'; then
+            raw="$(printf '%s\n' "$RAW_TAURI_SIGNING_PRIVATE_KEY" | base64 | tr -d '\n')"
           fi
 
-          {
-            echo "TAURI_SIGNING_PRIVATE_KEY<<EOF"
-            cat "$key_path"
-            echo "EOF"
-          } >> "$GITHUB_ENV"
+          echo "TAURI_SIGNING_PRIVATE_KEY=$raw" >> "$GITHUB_ENV"
 
           if [ -n "$RAW_TAURI_SIGNING_PRIVATE_KEY_PASSWORD" ]; then
             echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD=$RAW_TAURI_SIGNING_PRIVATE_KEY_PASSWORD" >> "$GITHUB_ENV"
@@ -144,13 +134,19 @@ jobs:
           echo "APPLE_SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
           echo "APPLE_KEYCHAIN_PATH=$keychain_path" >> "$GITHUB_ENV"
 
-      - name: Build macOS app
-        if: runner.os == 'macOS'
+      - name: Build signed macOS app
+        if: runner.os == 'macOS' && env.HAS_APPLE_SIGNING == 'true'
         env:
           APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: pnpm tauri build --target universal-apple-darwin
+
+      - name: Build unsigned macOS app
+        if: runner.os == 'macOS' && env.HAS_APPLE_SIGNING != 'true'
+        env:
+          APPLE_SIGNING_IDENTITY: "-"
         run: pnpm tauri build --target universal-apple-darwin
 
       - name: Build Windows app
