@@ -46,6 +46,17 @@ export interface CheckOptions {
   channel?: UpdateChannel;
 }
 
+function isTauriRuntime(): boolean {
+  if (typeof window === "undefined") return false;
+
+  const runtime = window as typeof window & {
+    __TAURI_INTERNALS__?: unknown;
+    __TAURI__?: unknown;
+  };
+
+  return Boolean(runtime.__TAURI_INTERNALS__ || runtime.__TAURI__);
+}
+
 function mapUpdateHandle(raw: Update): UpdateHandle {
   return {
     version: (raw as any).version ?? "",
@@ -97,6 +108,10 @@ export async function checkForUpdate(
   | { status: "available"; info: UpdateInfo; update: UpdateHandle }
 > {
   // 动态引入，避免在未安装插件时导致打包期问题
+  if (!isTauriRuntime()) {
+    return { status: "up-to-date" };
+  }
+
   const { check } = await import("@tauri-apps/plugin-updater");
 
   const currentVersion = await getCurrentVersion();

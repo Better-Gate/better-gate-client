@@ -9,7 +9,6 @@ mod codex_history_migration;
 mod commands;
 mod config;
 mod database;
-mod deeplink;
 mod error;
 mod gemini_config;
 mod gemini_mcp;
@@ -42,7 +41,6 @@ pub use commands::open_provider_terminal;
 pub use commands::*;
 pub use config::{get_claude_mcp_path, get_claude_settings_path, read_json_file};
 pub use database::Database;
-pub use deeplink::{import_provider_from_deeplink, parse_deeplink_url, DeepLinkImportRequest};
 pub use error::AppError;
 pub use mcp::{
     import_from_claude, import_from_codex, import_from_gemini, remove_server_from_claude,
@@ -58,15 +56,14 @@ pub use services::{
 };
 pub use settings::{update_settings, AppSettings};
 pub use store::AppState;
-use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
 use std::sync::Arc;
 #[cfg(target_os = "macos")]
 use tauri::image::Image;
 use tauri::tray::{TrayIconBuilder, TrayIconEvent};
+use tauri::Manager;
 use tauri::RunEvent;
-use tauri::{Emitter, Manager};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 fn redact_url_for_log(url_str: &str) -> String {
@@ -100,71 +97,6 @@ fn redact_url_for_log(url_str: &str) -> String {
     }
 }
 
-/// 统一处理 ccswitch:// 深链接 URL
-///
-/// - 解析 URL
-/// - 向前端发射 `deeplink-import` / `deeplink-error` 事件
-/// - 可选：在成功时聚焦主窗口
-fn handle_deeplink_url(
-    app: &tauri::AppHandle,
-    url_str: &str,
-    focus_main_window: bool,
-    source: &str,
-) -> bool {
-    if !url_str.starts_with("ccswitch://") {
-        return false;
-    }
-
-    let redacted_url = redact_url_for_log(url_str);
-    log::info!("✓ Deep link URL detected from {source}: {redacted_url}");
-    log::debug!("Deep link URL (raw) from {source}: {url_str}");
-
-    match crate::deeplink::parse_deeplink_url(url_str) {
-        Ok(request) => {
-            log::info!(
-                "✓ Successfully parsed deep link: resource={}, app={:?}, name={:?}",
-                request.resource,
-                request.app,
-                request.name
-            );
-
-            if let Err(e) = app.emit("deeplink-import", &request) {
-                log::error!("✗ Failed to emit deeplink-import event: {e}");
-            } else {
-                log::info!("✓ Emitted deeplink-import event to frontend");
-            }
-
-            if focus_main_window {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.unminimize();
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                    #[cfg(target_os = "linux")]
-                    {
-                        linux_fix::nudge_main_window(window.clone());
-                    }
-                    log::info!("✓ Window shown and focused");
-                }
-            }
-        }
-        Err(e) => {
-            log::error!("✗ Failed to parse deep link URL: {e}");
-
-            if let Err(emit_err) = app.emit(
-                "deeplink-error",
-                serde_json::json!({
-                    "url": url_str,
-                    "error": e.to_string()
-                }),
-            ) {
-                log::error!("✗ Failed to emit deeplink-error event: {emit_err}");
-            }
-        }
-    }
-
-    true
-}
-
 /// 更新托盘菜单的Tauri命令
 #[tauri::command]
 async fn update_tray_menu(
@@ -185,6 +117,14 @@ async fn update_tray_menu(
             Ok(false)
         }
     }
+}
+
+#[tauri::command]
+async fn update_better_gate_tray_context(
+    app: tauri::AppHandle,
+    context: tray::BetterGateTrayContext,
+) -> Result<bool, String> {
+    tray::update_better_gate_tray_context(&app, context)
 }
 
 #[cfg(target_os = "macos")]
@@ -222,20 +162,8 @@ pub fn run() {
                 }
             }
 
-            // Check for deep link URL in args (mainly for Windows/Linux command line)
-            let mut found_deeplink = false;
-            for arg in &args {
-                if handle_deeplink_url(app, arg, false, "single_instance args") {
-                    found_deeplink = true;
-                    break;
-                }
-            }
-
-            if !found_deeplink {
-                log::info!("ℹ No deep link URL found in args (this is expected on macOS when launched via system)");
-            }
-
-            // Show and focus window regardless
+            // Better Gate Desktop is account-login based and does not import via URL protocols.
+            // A second launch should only focus the existing client window.
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.unminimize();
                 let _ = window.show();
@@ -249,8 +177,6 @@ pub fn run() {
     }
 
     let builder = builder
-        // 注册 deep-link 插件（处理 macOS AppleEvent 和其他平台的深链接）
-        .plugin(tauri_plugin_deep_link::init())
         // 拦截窗口关闭：根据设置决定是否最小化到托盘
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
@@ -312,7 +238,7 @@ pub fn run() {
                 }
 
                 // 启动时删除旧日志文件，实现单文件覆盖效果
-                let log_file_path = log_dir.join("cc-switch.log");
+                let log_file_path = log_dir.join("better-gate-client.log");
                 let _ = std::fs::remove_file(&log_file_path);
 
                 app.handle().plugin(
@@ -323,7 +249,7 @@ pub fn run() {
                             Target::new(TargetKind::Stdout),
                             Target::new(TargetKind::Folder {
                                 path: log_dir,
-                                file_name: Some("cc-switch".into()),
+                                file_name: Some("better-gate-client".into()),
                             }),
                         ])
                         // 单文件模式：启动时删除旧文件，达到大小时轮转
@@ -344,7 +270,7 @@ pub fn run() {
 
             // 初始化数据库
             let app_config_dir = crate::config::get_app_config_dir();
-            let db_path = app_config_dir.join("cc-switch.db");
+            let db_path = app_config_dir.join(crate::config::APP_DATABASE_FILENAME);
             let json_path = app_config_dir.join("config.json");
 
             // 检查是否需要从 config.json 迁移到 SQLite
@@ -750,76 +676,12 @@ pub fn run() {
 
             // 启动阶段不再无条件保存,避免意外覆盖用户配置。
 
-            // 注册 deep-link URL 处理器（使用正确的 DeepLinkExt API）
-            log::info!("=== Registering deep-link URL handler ===");
-
-            // Linux 和 Windows 调试模式需要显式注册
-            #[cfg(any(target_os = "linux", all(debug_assertions, windows)))]
-            {
-                #[cfg(target_os = "linux")]
-                {
-                    // Use Tauri's path API to get correct path (includes app identifier)
-                    // tauri-plugin-deep-link writes to: ~/.local/share/com.ccswitch.desktop/applications/cc-switch-handler.desktop
-                    // Only register if .desktop file doesn't exist to avoid overwriting user customizations
-                    let should_register = app
-                        .path()
-                        .data_dir()
-                        .map(|d| !d.join("applications/cc-switch-handler.desktop").exists())
-                        .unwrap_or(true);
-
-                    if should_register {
-                        if let Err(e) = app.deep_link().register_all() {
-                            log::error!("✗ Failed to register deep link schemes: {}", e);
-                        } else {
-                            log::info!("✓ Deep link schemes registered (Linux)");
-                        }
-                    } else {
-                        log::info!("⊘ Deep link handler already exists, skipping registration");
-                    }
-                }
-
-                #[cfg(all(debug_assertions, windows))]
-                {
-                    if let Err(e) = app.deep_link().register_all() {
-                        log::error!("✗ Failed to register deep link schemes: {}", e);
-                    } else {
-                        log::info!("✓ Deep link schemes registered (Windows debug)");
-                    }
-                }
-            }
-
-            // 注册 URL 处理回调（所有平台通用）
-            app.deep_link().on_open_url({
-                let app_handle = app.handle().clone();
-                move |event| {
-                    log::info!("=== Deep Link Event Received (on_open_url) ===");
-                    let urls = event.urls();
-                    log::info!("Received {} URL(s)", urls.len());
-
-                    if crate::lightweight::is_lightweight_mode() {
-                        if let Err(e) = crate::lightweight::exit_lightweight_mode(&app_handle) {
-                            log::error!("退出轻量模式重建窗口失败: {e}");
-                        }
-                    }
-
-                    for (i, url) in urls.iter().enumerate() {
-                        let url_str = url.as_str();
-                        log::debug!("  URL[{i}]: {}", redact_url_for_log(url_str));
-
-                        if handle_deeplink_url(&app_handle, url_str, true, "on_open_url") {
-                            break; // Process only first ccswitch:// URL
-                        }
-                    }
-                }
-            });
-            log::info!("✓ Deep-link URL handler registered");
-
             // 创建动态托盘菜单
             let menu = tray::create_tray_menu(app.handle(), &app_state)?;
 
             // 构建托盘
             let mut tray_builder = TrayIconBuilder::with_id(tray::TRAY_ID)
-                .tooltip("CC Switch") // 鼠标悬停提示
+                    .tooltip("Better Gate") // 鼠标悬停提示
                 .on_tray_icon_event(|tray, event| match event {
                     // 鼠标悬停/点击到托盘图标时，后台异步刷新用量缓存，
                     // 让用户下一次（或快速打开菜单的那一刻）看到较新的数字。
@@ -1064,9 +926,7 @@ pub fn run() {
             let settings = crate::settings::get_settings();
             if let Some(window) = app.get_webview_window("main") {
                 // 在窗口首次显示前同步装饰状态，避免前端加载后再切换导致标题栏闪烁
-                // 仅 Linux 生效：解决 Wayland 下系统窗口按钮不可用的问题
-                #[cfg(target_os = "linux")]
-                let _ = window.set_decorations(!settings.use_app_window_controls);
+                let _ = window.set_decorations(false);
                 if settings.silent_startup {
                     // 静默启动模式：保持窗口隐藏
                     let _ = window.hide();
@@ -1207,12 +1067,8 @@ pub fn run() {
             commands::rename_db_backup,
             commands::delete_db_backup,
             commands::sync_current_providers_live,
-            // Deep link import
-            commands::parse_deeplink,
-            commands::merge_deeplink_config,
-            commands::import_from_deeplink,
-            commands::import_from_deeplink_unified,
             update_tray_menu,
+            update_better_gate_tray_context,
             // Environment variable management
             commands::check_env_conflicts,
             commands::delete_env_vars,
@@ -1453,65 +1309,6 @@ pub fn run() {
                     } else if crate::lightweight::is_lightweight_mode() {
                         if let Err(e) = crate::lightweight::exit_lightweight_mode(app_handle) {
                             log::error!("退出轻量模式重建窗口失败: {e}");
-                        }
-                    }
-                }
-                // 处理通过自定义 URL 协议触发的打开事件（例如 ccswitch://...）
-                RunEvent::Opened { urls } => {
-                    if let Some(url) = urls.first() {
-                        let url_str = url.to_string();
-                        log::info!("RunEvent::Opened with URL: {url_str}");
-
-                        if url_str.starts_with("ccswitch://") {
-                            if crate::lightweight::is_lightweight_mode() {
-                                if let Err(e) = crate::lightweight::exit_lightweight_mode(app_handle)
-                                {
-                                    log::error!("退出轻量模式重建窗口失败: {e}");
-                                }
-                            }
-
-                            // 解析并广播深链接事件，复用与 single_instance 相同的逻辑
-                            match crate::deeplink::parse_deeplink_url(&url_str) {
-                                Ok(request) => {
-                                    log::info!(
-                                        "Successfully parsed deep link from RunEvent::Opened: resource={}, app={:?}",
-                                        request.resource,
-                                        request.app
-                                    );
-
-                                    if let Err(e) =
-                                        app_handle.emit("deeplink-import", &request)
-                                    {
-                                        log::error!(
-                                            "Failed to emit deep link event from RunEvent::Opened: {e}"
-                                        );
-                                    }
-                                }
-                                Err(e) => {
-                                    log::error!(
-                                        "Failed to parse deep link URL from RunEvent::Opened: {e}"
-                                    );
-
-                                    if let Err(emit_err) = app_handle.emit(
-                                        "deeplink-error",
-                                        serde_json::json!({
-                                            "url": url_str,
-                                            "error": e.to_string()
-                                        }),
-                                    ) {
-                                        log::error!(
-                                            "Failed to emit deep link error event from RunEvent::Opened: {emit_err}"
-                                        );
-                                    }
-                                }
-                            }
-
-                            // 确保主窗口可见
-                            if let Some(window) = app_handle.get_webview_window("main") {
-                                let _ = window.unminimize();
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
                         }
                     }
                 }

@@ -64,6 +64,7 @@ interface OpenClawFormFieldsProps {
   // Models
   models: OpenClawModel[];
   onModelsChange: (models: OpenClawModel[]) => void;
+  shouldShowModelFetch?: boolean;
 
   // User-Agent
   userAgent: boolean;
@@ -84,6 +85,7 @@ export function OpenClawFormFields({
   onApiChange,
   models,
   onModelsChange,
+  shouldShowModelFetch = true,
   userAgent,
   onUserAgentChange,
 }: OpenClawFormFieldsProps) {
@@ -286,21 +288,23 @@ export function OpenClawFormFields({
             {t("openclaw.models", { defaultValue: "模型列表" })}
           </FormLabel>
           <div className="flex gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleFetchModels}
-              disabled={isFetchingModels}
-              className="h-7 gap-1"
-            >
-              {isFetchingModels ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Download className="h-3.5 w-3.5" />
-              )}
-              {t("providerForm.fetchModels")}
-            </Button>
+            {shouldShowModelFetch ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleFetchModels}
+                disabled={isFetchingModels}
+                className="h-7 gap-1"
+              >
+                {isFetchingModels ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                {t("providerForm.fetchModels")}
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"

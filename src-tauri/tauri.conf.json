@@ -1,11 +1,11 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "CC Switch",
+  "productName": "Better Gate",
   "version": "3.16.1",
-  "identifier": "com.ccswitch.desktop",
+  "identifier": "com.bettergate.desktop",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:3000",
+    "devUrl": "http://localhost:5173",
     "beforeDevCommand": "pnpm run dev:renderer",
     "beforeBuildCommand": "pnpm run build:renderer"
   },
@@ -13,8 +13,9 @@
     "windows": [
       {
         "label": "main",
-        "title": "",
+        "title": "Better Gate",
         "titleBarStyle": "Overlay",
+        "decorations": false,
         "width": 1000,
         "height": 650,
         "minWidth": 900,
@@ -37,6 +38,11 @@
     "active": true,
     "targets": "all",
     "createUpdaterArtifacts": true,
+    "publisher": "Freesia Labs LLC",
+    "homepage": "https://better-gate.com",
+    "copyright": "Copyright © 2026 Freesia Labs LLC. All rights reserved.",
+    "shortDescription": "Better Gate desktop client",
+    "longDescription": "Better Gate desktop client for connecting Claude Code, Codex, Gemini CLI, and other local AI development tools.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -54,15 +60,10 @@
     }
   },
   "plugins": {
-    "deep-link": {
-      "desktop": {
-        "schemes": ["ccswitch"]
-      }
-    },
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM4MDI4QzlBNTczOTI4RTMKUldUaktEbFhtb3dDeUM5US9kT0FmdGR5Ti9vQzcwa2dTMlpibDVDUmQ2M0VGTzVOWnd0SGpFVlEK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQwQjc1RUExNEU1ODhBOTgKUldTWWlsaE9vVjYzUU5LT2NLaHJIQVV5RlNDb1VMcTQ3YVJrM21vQ2FQS2o3K1VyUkZYOUgxOXYK",
       "endpoints": [
-        "https://github.com/farion1231/cc-switch/releases/latest/download/latest.json"
+        "https://github.com/Better-Gate/better-gate-client/releases/latest/download/latest.json"
       ]
     }
   }

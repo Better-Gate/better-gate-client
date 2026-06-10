@@ -186,7 +186,6 @@ Claude Code / Codex / Gemini 公式チャンネルが最安で元価格の 38% /
 
 ### MCP、Prompts & Skills
 
-- **統一 MCP パネル** -- 4 つのアプリの MCP サーバーを管理、双方向同期、Deep Link インポート対応
 - **Prompts** -- Markdown エディタ、クロスアプリ同期（CLAUDE.md / AGENTS.md / GEMINI.md）、バックフィル保護
 - **Skills** -- GitHub リポジトリまたは ZIP ファイルからワンクリックインストール、カスタムリポジトリ管理、シンボリックリンクとファイルコピーに対応
 
@@ -202,7 +201,6 @@ Claude Code / Codex / Gemini 公式チャンネルが最安で元価格の 38% /
 ### システム & プラットフォーム
 
 - **クラウド同期** -- カスタム設定ディレクトリ（Dropbox、OneDrive、iCloud、NAS）および WebDAV サーバー同期
-- **Deep Link** (`ccswitch://`) -- URL 経由でプロバイダ、MCP サーバー、Prompts、Skills をワンクリックインポート
 - ダーク / ライト / システムテーマ、自動起動、自動アップデーター、アトミック書き込み、自動バックアップ、多言語対応（中/英/日）
 
 ## よくある質問
@@ -484,7 +482,6 @@ pnpm test:unit --coverage
 │   │   ├── proxy/              # Proxy モードパネル
 │   │   ├── openclaw/           # OpenClaw 設定パネル
 │   │   ├── settings/           # 設定 (Terminal/Backup/About)
-│   │   ├── deeplink/           # Deep Link インポート
 │   │   ├── env/                # 環境変数管理
 │   │   ├── universal/          # クロスアプリ設定
 │   │   ├── usage/              # 使用量統計
@@ -503,7 +500,6 @@ pnpm test:unit --coverage
 │       ├── database/           # SQLite DAO 層
 │       ├── proxy/              # Proxy モジュール
 │       ├── session_manager/    # セッション管理
-│       ├── deeplink/           # Deep Link 処理
 │       └── mcp/                # MCP 同期モジュール
 ├── tests/                      # フロントエンドテスト
 └── assets/                     # スクリーンショット & パートナーリソース

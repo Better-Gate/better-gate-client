@@ -1,0 +1,15 @@
+<svg width="512" height="512" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Better Gate">
+  <title>Better Gate</title>
+  <g transform="translate(11.84 11.84) scale(2.4)" fill="#000000">
+    <path d="M0 0H4.2V4.2H0V0Z" />
+    <rect x="4.2" y="0" width="4.2" height="4.2" />
+    <rect x="8.39999" y="4.2" width="4.2" height="4.2" />
+    <rect x="12.6" y="4.2" width="4.2" height="4.2" />
+    <rect x="12.6" y="8.3999" width="4.2" height="4.2" />
+    <path d="M12.6 12.5999H16.8V16.7999H12.6V12.5999Z" />
+    <rect x="8.39999" y="12.5999" width="4.2" height="4.2" />
+    <rect y="4.2" width="4.2" height="4.2" />
+    <rect y="8.3999" width="4.2" height="4.2" />
+    <rect x="4.2" y="8.3999" width="4.2" height="4.2" />
+  </g>
+</svg>

@@ -3,6 +3,8 @@ dist/
 release/
 .DS_Store
 *.log
+bettergate-tauri-updater.key
+bettergate-tauri-updater.key.pub
 .env
 .env.local
 *.tsbuildinfo

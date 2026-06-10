@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "CC Switch",
-    "description": "Claude Code / Codex / Gemini CLI 全方位輔助工具"
+    "title": "Better Gate",
+    "description": "Better Gate 桌面用戶端"
   },
   "common": {
     "add": "新增",
@@ -43,9 +43,9 @@
     "notSet": "未設定"
   },
   "firstRunNotice": {
-    "title": "歡迎使用 CC Switch",
-    "bodyDefault": "CC Switch 可以協助您在 Claude Code / Codex / Gemini CLI 的多個供應商之間一鍵切換。如果您之前已經設定過這些工具，CC Switch 會自動將現有設定儲存為名為 default 的供應商，確保您的設定不會遺失。",
-    "bodyOfficial": "清單中還預設了「官方 (Official)」供應商，隨時點擊即可切換回官方預設設定。切換前 CC Switch 會自動將目前設定備份回 default，可以放心來回切換。這就是 CC Switch 的運作方式。",
+    "title": "歡迎使用 Better Gate",
+    "bodyDefault": "Better Gate 可以協助您將 Claude Code、Codex、Gemini CLI 等本地開發工具接入統一的 AI Gateway。",
+    "bodyOfficial": "完成登入後，選擇工作區、選擇工具，再匯入可用的 API Key。切換供應商後請重新啟動對應客戶端讓設定生效。",
     "confirm": "我了解了"
   },
   "apiKeyInput": {
@@ -503,7 +503,7 @@
         "synologyHint": "請先在 Synology「套件中心」安裝並啟用 WebDAV Server 套件。",
         "custom": "自訂"
       },
-      "remoteRootDefault": "預設: cc-switch-sync",
+      "remoteRootDefault": "預設: better-gate-client-sync",
       "profileDefault": "預設: default",
       "saveAndTestSuccess": "設定已儲存，連線正常",
       "saveAndTestFailed": "設定已儲存，但連線測試失敗：{{error}}",
@@ -2008,80 +2008,6 @@
       "successMultiple": "成功安裝 {{count}} 個技能",
       "noSkillsFound": "ZIP 檔案中未找到技能（需包含 SKILL.md 檔案）"
     }
-  },
-  "deeplink": {
-    "confirmImport": "確認匯入供應商設定",
-    "confirmImportDescription": "以下設定將匯入至 CC Switch",
-    "importPrompt": "匯入提示詞",
-    "importPromptDescription": "請確認是否匯入此系統提示詞",
-    "importMcp": "匯入 MCP Servers",
-    "importMcpDescription": "請確認是否匯入這些 MCP Servers",
-    "importSkill": "新增 Skill 儲存庫",
-    "importSkillDescription": "請確認是否新增此 Skill 儲存庫",
-    "promptImportSuccess": "提示詞匯入成功",
-    "promptImportSuccessDescription": "已匯入提示詞：{{name}}",
-    "mcpImportSuccess": "MCP Servers 匯入成功",
-    "mcpImportSuccessDescription": "成功匯入 {{count}} 個伺服器",
-    "mcpPartialSuccess": "部分匯入成功",
-    "mcpPartialSuccessDescription": "成功：{{success}}，失敗：{{failed}}",
-    "skillImportSuccess": "Skill 儲存庫新增成功",
-    "skillImportSuccessDescription": "已新增儲存庫：{{repo}}",
-    "app": "應用程式類型",
-    "providerName": "供應商名稱",
-    "homepage": "官網位址",
-    "endpoint": "API 端點",
-    "apiKey": "API 金鑰",
-    "icon": "圖示",
-    "model": "模型",
-    "haikuModel": "Haiku 模型",
-    "sonnetModel": "Sonnet 模型",
-    "opusModel": "Opus 模型",
-    "multiModel": "多模態模型",
-    "notes": "備註",
-    "import": "匯入",
-    "importing": "匯入中...",
-    "warning": "請確認以上資訊準確無誤後再匯入。匯入後可在供應商清單中編輯或刪除。",
-    "parseError": "深層連結解析失敗",
-    "importSuccess": "匯入成功",
-    "importSuccessDescription": "供應商 \"{{name}}\" 已成功匯入",
-    "importError": "匯入失敗",
-    "configSource": "設定來源",
-    "configEmbedded": "內嵌設定",
-    "configRemote": "遠端設定",
-    "configDetails": "設定詳情",
-    "configUrl": "設定檔 URL",
-    "configMergeError": "合併設定檔失敗",
-    "primaryEndpoint": "主",
-    "mcp": {
-      "title": "批次匯入 MCP Servers",
-      "targetApps": "目標應用程式",
-      "serverCount": "MCP Servers ({{count}} 個)",
-      "enabledWarning": "匯入後將立即寫入所有指定應用程式的設定檔"
-    },
-    "prompt": {
-      "title": "匯入系統提示詞",
-      "app": "應用程式",
-      "name": "名稱",
-      "description": "描述",
-      "contentPreview": "內容預覽",
-      "enabledWarning": "匯入後將立即啟用此提示詞，其他提示詞將被停用"
-    },
-    "skill": {
-      "title": "新增 Claude Skill 儲存庫",
-      "repo": "GitHub 儲存庫",
-      "directory": "目標目錄",
-      "branch": "分支",
-      "skillsPath": "Skills 路徑",
-      "hint": "此操作將新增 Skill 儲存庫至清單。",
-      "hintDetail": "新增後，您可以在 Skills 管理介面中選擇安裝具體的 Skill。"
-    },
-    "usageScript": "用量查詢",
-    "usageScriptEnabled": "已啟用",
-    "usageScriptDisabled": "未啟用",
-    "usageApiKey": "用量 API Key",
-    "usageBaseUrl": "用量查詢位址",
-    "usageAutoInterval": "自動查詢",
-    "usageAutoIntervalValue": "每 {{minutes}} 分鐘"
   },
   "iconPicker": {
     "search": "搜尋圖示",

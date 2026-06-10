@@ -55,6 +55,10 @@ export const providersApi = {
     return await invoke("get_current_provider", { app: appId });
   },
 
+  async readLiveSettings(appId: AppId): Promise<Record<string, unknown>> {
+    return await invoke("read_live_provider_settings", { app: appId });
+  },
+
   async add(
     provider: Provider,
     appId: AppId,
@@ -113,6 +117,14 @@ export const providersApi = {
 
   async updateTrayMenu(): Promise<boolean> {
     return await invoke("update_tray_menu");
+  },
+
+  async updateBetterGateTrayContext(context: {
+    workspaceLabel?: string;
+    balanceLabel?: string;
+    todayTokensLabel?: string;
+  }): Promise<boolean> {
+    return await invoke("update_better_gate_tray_context", { context });
   },
 
   async updateSortOrder(

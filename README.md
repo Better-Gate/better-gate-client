@@ -187,7 +187,6 @@ Modern AI-powered coding relies on CLI tools like Claude Code, Codex, Gemini CLI
 
 ### MCP, Prompts & Skills
 
-- **Unified MCP panel** — Manage MCP servers across 4 apps with bidirectional sync and Deep Link import
 - **Prompts** — Markdown editor with cross-app sync (CLAUDE.md / AGENTS.md / GEMINI.md) and backfill protection
 - **Skills** — One-click install from GitHub repos or ZIP files, custom repository management, with symlink and file copy support
 
@@ -203,7 +202,6 @@ Modern AI-powered coding relies on CLI tools like Claude Code, Codex, Gemini CLI
 ### System & Platform
 
 - **Cloud sync** — Custom config directory (Dropbox, OneDrive, iCloud, NAS) and WebDAV server sync
-- **Deep Link** (`ccswitch://`) — Import providers, MCP servers, prompts, and skills via URL
 - Dark / Light / System theme, auto-launch, auto-updater, atomic writes, auto-backups, i18n (zh/en/ja)
 
 ## FAQ
@@ -485,7 +483,6 @@ pnpm test:unit --coverage
 │   │   ├── proxy/              # Proxy mode panel
 │   │   ├── openclaw/           # OpenClaw config panels
 │   │   ├── settings/           # Settings (Terminal/Backup/About)
-│   │   ├── deeplink/           # Deep Link import
 │   │   ├── env/                # Environment variable management
 │   │   ├── universal/          # Cross-app configuration
 │   │   ├── usage/              # Usage statistics
@@ -504,7 +501,6 @@ pnpm test:unit --coverage
 │       ├── database/           # SQLite DAO layer
 │       ├── proxy/              # Proxy module
 │       ├── session_manager/    # Session management
-│       ├── deeplink/           # Deep Link handling
 │       └── mcp/                # MCP sync module
 ├── tests/                      # Frontend tests
 └── assets/                     # Screenshots & partner resources

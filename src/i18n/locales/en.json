@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "CC Switch",
-    "description": "All-in-One Assistant for Claude Code, Codex & Gemini CLI"
+    "title": "Better Gate",
+    "description": "Better Gate desktop client"
   },
   "common": {
     "add": "Add",
@@ -43,9 +43,9 @@
     "notSet": "Not Set"
   },
   "firstRunNotice": {
-    "title": "Welcome to CC Switch",
-    "bodyDefault": "CC Switch lets you switch between multiple Claude Code / Codex / Gemini CLI providers with a single click. If you already had these tools configured, CC Switch has saved your existing setup as a provider named “default” so none of your previous configuration is lost.",
-    "bodyOfficial": "An “Official” preset is also included in the list — click it any time you want to switch back to the official default. CC Switch automatically backs up your current config to “default” before switching, so you can move back and forth freely. That's how CC Switch works 😊",
+    "title": "Welcome to Better Gate",
+    "bodyDefault": "Better Gate helps you connect Claude Code, Codex, Gemini CLI, and other local development tools to one AI gateway.",
+    "bodyOfficial": "After signing in, choose a workspace, choose a tool, and import an available API key. Restart the target client after switching providers.",
     "confirm": "Got it"
   },
   "apiKeyInput": {
@@ -503,7 +503,7 @@
         "synologyHint": "Install and enable the WebDAV Server package in Synology Package Center first.",
         "custom": "Custom"
       },
-      "remoteRootDefault": "Default: cc-switch-sync",
+      "remoteRootDefault": "Default: better-gate-client-sync",
       "profileDefault": "Default: default",
       "saveAndTestSuccess": "Config saved, connection OK",
       "saveAndTestFailed": "Config saved, but connection test failed: {{error}}",
@@ -1124,8 +1124,8 @@
     "modelNameHint": "Specify the model to use, will be auto-updated in config.toml",
     "modelName": "Model Name",
     "localRoutingToggle": "Needs Local Routing",
-    "localRoutingOffHint": "If your provider is not native OpenAI Responses API, or the model name is not Codex's default GPT series, please enable this switch.",
-    "localRoutingOnHint": "Codex currently only natively supports OpenAI Responses API and GPT series models. If your provider uses the Chat Completions protocol or non-GPT models (such as DeepSeek or Kimi), enable this switch and keep local routing running while in use.",
+    "localRoutingOffHint": "Better Gate uses the native OpenAI Responses API by default. Enable this only when you want Codex to use non-GPT models.",
+    "localRoutingOnHint": "When enabled, the Better Gate client converts requests locally. Keep the client running while using Codex, and restart Codex after switching the configuration.",
     "upstreamModelName": "Upstream Model Name",
     "upstreamModelNameHint": "For Chat format, enter the real upstream model here; routing converts Codex Responses requests to Chat Completions while keeping this model.",
     "modelNamePlaceholder": "e.g., gpt-5-codex",
@@ -2062,80 +2062,6 @@
       "successMultiple": "Successfully installed {{count}} skills",
       "noSkillsFound": "No skills found in ZIP file (requires SKILL.md file)"
     }
-  },
-  "deeplink": {
-    "confirmImport": "Confirm Import Provider",
-    "confirmImportDescription": "The following configuration will be imported from deep link into CC Switch",
-    "importPrompt": "Import Prompt",
-    "importPromptDescription": "Please confirm whether to import this system prompt",
-    "importMcp": "Import MCP Servers",
-    "importMcpDescription": "Please confirm whether to import these MCP Servers",
-    "importSkill": "Add Skill Repository",
-    "importSkillDescription": "Please confirm whether to add this Skill repository",
-    "promptImportSuccess": "Prompt imported successfully",
-    "promptImportSuccessDescription": "Imported prompt: {{name}}",
-    "mcpImportSuccess": "MCP Servers imported successfully",
-    "mcpImportSuccessDescription": "Successfully imported {{count}} server(s)",
-    "mcpPartialSuccess": "Partial import success",
-    "mcpPartialSuccessDescription": "Success: {{success}}, Failed: {{failed}}",
-    "skillImportSuccess": "Skill repository added successfully",
-    "skillImportSuccessDescription": "Added repository: {{repo}}",
-    "app": "App Type",
-    "providerName": "Provider Name",
-    "homepage": "Homepage",
-    "endpoint": "API Endpoint",
-    "apiKey": "API Key",
-    "icon": "Icon",
-    "model": "Model",
-    "haikuModel": "Haiku Model",
-    "sonnetModel": "Sonnet Model",
-    "opusModel": "Opus Model",
-    "multiModel": "Multi-Modal Model",
-    "notes": "Notes",
-    "import": "Import",
-    "importing": "Importing...",
-    "warning": "Please confirm the information above is correct before importing. You can edit or delete it later in the provider list.",
-    "parseError": "Failed to parse deep link",
-    "importSuccess": "Import successful",
-    "importSuccessDescription": "Provider \"{{name}}\" has been successfully imported",
-    "importError": "Failed to import",
-    "configSource": "Config Source",
-    "configEmbedded": "Embedded Config",
-    "configRemote": "Remote Config",
-    "configDetails": "Config Details",
-    "configUrl": "Config File URL",
-    "configMergeError": "Failed to merge configuration file",
-    "primaryEndpoint": "Primary",
-    "mcp": {
-      "title": "Batch Import MCP Servers",
-      "targetApps": "Target Apps",
-      "serverCount": "MCP Servers ({{count}})",
-      "enabledWarning": "After import, configurations will be written to all specified apps immediately"
-    },
-    "prompt": {
-      "title": "Import System Prompt",
-      "app": "App",
-      "name": "Name",
-      "description": "Description",
-      "contentPreview": "Content Preview",
-      "enabledWarning": "After import, this prompt will be enabled immediately and other prompts will be disabled"
-    },
-    "skill": {
-      "title": "Add Claude Skill Repository",
-      "repo": "GitHub Repository",
-      "directory": "Target Directory",
-      "branch": "Branch",
-      "skillsPath": "Skills Path",
-      "hint": "This will add the Skill repository to the list.",
-      "hintDetail": "After adding, you can install specific Skills from the Skills management page."
-    },
-    "usageScript": "Usage Query",
-    "usageScriptEnabled": "Enabled",
-    "usageScriptDisabled": "Disabled",
-    "usageApiKey": "Usage API Key",
-    "usageBaseUrl": "Usage Query URL",
-    "usageAutoInterval": "Auto Query",
-    "usageAutoIntervalValue": "Every {{minutes}} minutes"
   },
   "iconPicker": {
     "search": "Search Icons",

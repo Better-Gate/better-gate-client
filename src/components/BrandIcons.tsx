@@ -5,8 +5,9 @@ interface IconProps {
 
 // 导入本地 SVG 图标
 import ClaudeSvg from "@/icons/extracted/claude.svg?url";
-import OpenAISvg from "@/icons/extracted/openai.svg?url";
+import CodexColorSvg from "@/icons/extracted/codex-color.svg?url";
 import GeminiSvg from "@/icons/extracted/gemini.svg?url";
+import HermesAgentSvg from "@/icons/extracted/hermesagent-light.svg?url";
 import OpenClawSvg from "@/icons/extracted/claw.svg?url";
 
 export function ClaudeIcon({ size = 16, className = "" }: IconProps) {
@@ -25,10 +26,10 @@ export function ClaudeIcon({ size = 16, className = "" }: IconProps) {
 export function CodexIcon({ size = 16, className = "" }: IconProps) {
   return (
     <img
-      src={OpenAISvg}
+      src={CodexColorSvg}
       width={size}
       height={size}
-      className={`dark:brightness-0 dark:invert ${className}`}
+      className={className}
       alt="Codex"
       loading="lazy"
     />
@@ -56,6 +57,39 @@ export function OpenClawIcon({ size = 16, className = "" }: IconProps) {
       height={size}
       className={className}
       alt="OpenClaw"
+      loading="lazy"
+    />
+  );
+}
+
+export function OpenCodeIcon({ size = 16, className = "" }: IconProps) {
+  return (
+    <svg
+      fill="currentColor"
+      fillRule="evenodd"
+      height={size}
+      width={size}
+      className={`text-neutral-950 dark:text-white ${className}`}
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="OpenCode"
+      role="img"
+      data-brand-icon="opencode"
+    >
+      <path d="M16 6H8v12h8V6zm4 16H4V2h16v20z" />
+    </svg>
+  );
+}
+
+export function HermesIcon({ size = 16, className = "" }: IconProps) {
+  return (
+    <img
+      src={HermesAgentSvg}
+      width={size}
+      height={size}
+      className={`shrink-0 object-contain brightness-0 dark:invert ${className}`}
+      alt="Hermes"
+      data-brand-icon="hermes"
       loading="lazy"
     />
   );

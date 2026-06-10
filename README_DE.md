@@ -203,7 +203,6 @@ Modernes KI-gestütztes Programmieren stützt sich auf CLI-Werkzeuge wie Claude 
 ### System & Plattform
 
 - **Cloud-Synchronisierung** — Eigenes Konfigurationsverzeichnis (Dropbox, OneDrive, iCloud, NAS) und WebDAV-Server-Synchronisierung
-- **Deep Link** (`ccswitch://`) — Importieren Sie Anbieter, MCP-Server, Prompts und Skills per URL
 - Dunkles / Helles / System-Theme, automatischer Start, automatischer Updater, atomare Schreibvorgänge, automatische Backups, i18n (zh/en/ja)
 
 ## FAQ
@@ -485,7 +484,6 @@ pnpm test:unit --coverage
 │   │   ├── proxy/              # Proxy-Modus-Panel
 │   │   ├── openclaw/           # OpenClaw-Konfigurationspanels
 │   │   ├── settings/           # Einstellungen (Terminal/Backup/About)
-│   │   ├── deeplink/           # Deep-Link-Import
 │   │   ├── env/                # Verwaltung von Umgebungsvariablen
 │   │   ├── universal/          # App-übergreifende Konfiguration
 │   │   ├── usage/              # Nutzungsstatistik
@@ -504,7 +502,6 @@ pnpm test:unit --coverage
 │       ├── database/           # SQLite-DAO-Schicht
 │       ├── proxy/              # Proxy-Modul
 │       ├── session_manager/    # Sitzungsverwaltung
-│       ├── deeplink/           # Deep-Link-Verarbeitung
 │       └── mcp/                # MCP-Synchronisierungsmodul
 ├── tests/                      # Frontend-Tests
 └── assets/                     # Screenshots & Partnerressourcen

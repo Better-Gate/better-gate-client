@@ -122,6 +122,266 @@
   -webkit-app-region: no-drag;
 }
 
+.mac-window-controls {
+  display: none;
+}
+
+.windows-window-controls {
+  display: flex;
+}
+
+body.is-mac .app-titlebar {
+  justify-content: flex-start;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+body.is-mac .mac-window-controls {
+  display: flex;
+}
+
+body.is-mac .windows-window-controls {
+  display: none;
+}
+
+body.is-mac .bettergate-dashboard-brand {
+  padding-left: 74px;
+}
+
+.bettergate-client {
+  --bettergate-bg-shell: #f6f6f6;
+  --bettergate-bg-panel: #ffffff;
+  --bettergate-bg-hover: #fafafa;
+  --bettergate-bg-muted: #f5f5f5;
+  --bettergate-bg-muted-strong: #e5e5e5;
+  --bettergate-border-soft: #f5f5f5;
+  --bettergate-border: #e5e5e5;
+  --bettergate-text-strong: #0a0a0a;
+  --bettergate-text: #525252;
+  --bettergate-text-muted: #737373;
+  --bettergate-text-faint: #a3a3a3;
+  --bettergate-accent-bg: #0a0a0a;
+  --bettergate-accent-hover: #262626;
+  --bettergate-accent-text: #ffffff;
+  --bettergate-success-bg: #ecfdf5;
+  --bettergate-success-text: #047857;
+  --bettergate-warning-bg: #fffbeb;
+  --bettergate-warning-text: #b45309;
+  --bettergate-danger-bg: #fef2f2;
+  --bettergate-danger-text: #dc2626;
+}
+
+.dark .bettergate-client {
+  --bettergate-bg-shell: #111112;
+  --bettergate-bg-panel: #18181b;
+  --bettergate-bg-hover: #242428;
+  --bettergate-bg-muted: #27272a;
+  --bettergate-bg-muted-strong: #3f3f46;
+  --bettergate-border-soft: #242428;
+  --bettergate-border: #3f3f46;
+  --bettergate-text-strong: #f5f5f5;
+  --bettergate-text: #d4d4d8;
+  --bettergate-text-muted: #a1a1aa;
+  --bettergate-text-faint: #71717a;
+  --bettergate-accent-bg: #f5f5f5;
+  --bettergate-accent-hover: #e5e5e5;
+  --bettergate-accent-text: #111112;
+  --bettergate-success-bg: rgba(16, 185, 129, 0.14);
+  --bettergate-success-text: #6ee7b7;
+  --bettergate-warning-bg: rgba(245, 158, 11, 0.15);
+  --bettergate-warning-text: #fbbf24;
+  --bettergate-danger-bg: rgba(239, 68, 68, 0.15);
+  --bettergate-danger-text: #fca5a5;
+}
+
+.bettergate-client.bg-\[\#F6F6F6\],
+.bettergate-client .bg-\[\#F6F6F6\] {
+  background-color: var(--bettergate-bg-shell);
+}
+
+.bettergate-client.bg-white,
+.bettergate-client .bg-white {
+  background-color: var(--bettergate-bg-panel);
+}
+
+.bettergate-client .bg-neutral-50 {
+  background-color: var(--bettergate-bg-hover);
+}
+
+.bettergate-client .bg-neutral-100 {
+  background-color: var(--bettergate-bg-muted);
+}
+
+.bettergate-client .bg-neutral-200,
+.bettergate-client .bg-neutral-300 {
+  background-color: var(--bettergate-bg-muted-strong);
+}
+
+.bettergate-client .bg-neutral-950 {
+  background-color: var(--bettergate-accent-bg);
+}
+
+.bettergate-client .bg-neutral-950.text-white,
+.bettergate-client .text-white.bg-neutral-950 {
+  color: var(--bettergate-accent-text);
+}
+
+.bettergate-client .bg-emerald-50 {
+  background-color: var(--bettergate-success-bg);
+}
+
+.bettergate-client .bg-amber-50 {
+  background-color: var(--bettergate-warning-bg);
+}
+
+.bettergate-client .bg-red-50 {
+  background-color: var(--bettergate-danger-bg);
+}
+
+.bettergate-client.text-neutral-950,
+.bettergate-client .text-neutral-950 {
+  color: var(--bettergate-text-strong);
+}
+
+.bettergate-client .text-neutral-700,
+.bettergate-client .text-neutral-600 {
+  color: var(--bettergate-text);
+}
+
+.bettergate-client .text-neutral-500 {
+  color: var(--bettergate-text-muted);
+}
+
+.bettergate-client .text-neutral-400 {
+  color: var(--bettergate-text-faint);
+}
+
+.bettergate-client .text-emerald-700 {
+  color: var(--bettergate-success-text);
+}
+
+.bettergate-client .text-amber-700 {
+  color: var(--bettergate-warning-text);
+}
+
+.bettergate-client .text-red-600,
+.bettergate-client .text-red-500 {
+  color: var(--bettergate-danger-text);
+}
+
+.bettergate-client .border-neutral-100 {
+  border-color: var(--bettergate-border-soft);
+}
+
+.bettergate-client .border-neutral-200,
+.bettergate-client .border-neutral-200\/70 {
+  border-color: var(--bettergate-border);
+}
+
+.bettergate-client .ring-neutral-200 {
+  --tw-ring-color: var(--bettergate-border);
+}
+
+.bettergate-client .hover\:bg-neutral-50:hover,
+.bettergate-client .hover\:bg-neutral-100:hover {
+  background-color: var(--bettergate-bg-hover);
+}
+
+.bettergate-client .hover\:bg-neutral-800:hover {
+  background-color: var(--bettergate-accent-hover);
+}
+
+.bettergate-client .hover\:bg-red-50:hover {
+  background-color: var(--bettergate-danger-bg);
+}
+
+.bettergate-client .hover\:text-neutral-950:hover {
+  color: var(--bettergate-text-strong);
+}
+
+.bettergate-client .hover\:text-red-500:hover {
+  color: var(--bettergate-danger-text);
+}
+
+.bettergate-client
+  .data-\[state\=active\]\:bg-neutral-100[data-state="active"] {
+  background-color: var(--bettergate-bg-muted);
+}
+
+.bettergate-client
+  .data-\[state\=active\]\:text-neutral-950[data-state="active"] {
+  color: var(--bettergate-text-strong);
+}
+
+.bettergate-client .disabled\:bg-neutral-300:disabled {
+  background-color: var(--bettergate-bg-muted-strong);
+}
+
+.dark .bettergate-client .bettergate-brand-icon {
+  filter: invert(1);
+}
+
+.bettergate-client .bettergate-manual-form {
+  color: var(--bettergate-text-strong);
+}
+
+.bettergate-client .bettergate-manual-form label,
+.bettergate-client .bettergate-manual-form [data-slot="label"] {
+  color: var(--bettergate-text);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.bettergate-client .bettergate-manual-form input,
+.bettergate-client .bettergate-manual-form textarea,
+.bettergate-client .bettergate-manual-form button[role="combobox"] {
+  min-height: 36px;
+  border-color: var(--bettergate-border);
+  border-radius: 10px;
+  background-color: var(--bettergate-bg-panel);
+  color: var(--bettergate-text-strong);
+  box-shadow: none;
+}
+
+.bettergate-client .bettergate-manual-form input::placeholder,
+.bettergate-client .bettergate-manual-form textarea::placeholder {
+  color: var(--bettergate-text-faint);
+}
+
+.bettergate-client .bettergate-manual-form input:focus-visible,
+.bettergate-client .bettergate-manual-form textarea:focus-visible,
+.bettergate-client .bettergate-manual-form button[role="combobox"]:focus-visible {
+  outline: none;
+  border-color: var(--bettergate-text-faint);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bettergate-text-faint) 18%, transparent);
+}
+
+.bettergate-client .bettergate-manual-form .rounded-md,
+.bettergate-client .bettergate-manual-form .rounded-lg {
+  border-radius: 10px;
+}
+
+.bettergate-client .bettergate-manual-form .border,
+.bettergate-client .bettergate-manual-form .border-neutral-200 {
+  border-color: var(--bettergate-border);
+}
+
+.bettergate-client .bettergate-manual-form .bg-neutral-50,
+.bettergate-client .bettergate-manual-form .bg-muted,
+.bettergate-client .bettergate-manual-form .bg-background {
+  background-color: var(--bettergate-bg-panel);
+}
+
+.bettergate-client .bettergate-manual-form .text-muted-foreground,
+.bettergate-client .bettergate-manual-form .text-neutral-500,
+.bettergate-client .bettergate-manual-form .text-neutral-400 {
+  color: var(--bettergate-text-muted);
+}
+
+.bettergate-client .bettergate-manual-form .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 18px;
+}
+
 * {
   box-sizing: border-box;
   scrollbar-width: none;

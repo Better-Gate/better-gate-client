@@ -22,7 +22,7 @@ export const hermesApi = {
 
   /**
    * Probe the local Hermes Web UI and open it in the system browser.
-   * Optional `path` lets callers deep-link to specific pages like `/config`.
+   * Optional `path` lets callers open specific pages like `/config`.
    */
   async openWebUI(path?: string): Promise<void> {
     await invoke("open_hermes_web_ui", { path: path ?? null });

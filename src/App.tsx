@@ -8,10 +8,6 @@ import {
   Plus,
   Settings,
   ArrowLeft,
-  Minus,
-  Maximize2,
-  Minimize2,
-  X,
   Book,
   Brain,
   Wrench,
@@ -27,7 +23,7 @@ import {
   Cpu,
   LayoutDashboard,
 } from "lucide-react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import type { Provider, VisibleApps } from "@/types";
 import type { EnvConflict } from "@/types/env";
 import { useProvidersQuery, useSettingsQuery } from "@/lib/query";
@@ -58,6 +54,7 @@ import {
   DRAG_REGION_STYLE,
 } from "@/lib/platform";
 import { AppSwitcher } from "@/components/AppSwitcher";
+import { WindowControlIcon } from "@/components/WindowControlIcon";
 import { ProviderList } from "@/components/providers/ProviderList";
 import { AddProviderDialog } from "@/components/providers/AddProviderDialog";
 import { EditProviderDialog } from "@/components/providers/EditProviderDialog";
@@ -73,7 +70,6 @@ import UnifiedMcpPanel from "@/components/mcp/UnifiedMcpPanel";
 import PromptPanel from "@/components/prompts/PromptPanel";
 import { SkillsPage } from "@/components/skills/SkillsPage";
 import UnifiedSkillsPanel from "@/components/skills/UnifiedSkillsPanel";
-import { DeepLinkImportDialog } from "@/components/DeepLinkImportDialog";
 import { FirstRunNoticeDialog } from "@/components/FirstRunNoticeDialog";
 import { AgentsPanel } from "@/components/agents/AgentsPanel";
 import { UniversalProviderPanel } from "@/components/universal";
@@ -116,7 +112,7 @@ interface WebDavSyncStatusUpdatedPayload {
 const DEFAULT_DRAG_BAR_HEIGHT = isWindows() || isLinux() ? 0 : 28; // px
 const HEADER_HEIGHT = 64; // px
 
-const STORAGE_KEY = "cc-switch-last-app";
+const STORAGE_KEY = "better-gate-client-last-app";
 const VALID_APPS: AppId[] = [
   "claude",
   "claude-desktop",
@@ -135,7 +131,7 @@ const getInitialApp = (): AppId => {
   return "claude";
 };
 
-const VIEW_STORAGE_KEY = "cc-switch-last-view";
+const VIEW_STORAGE_KEY = "better-gate-client-last-view";
 const VALID_VIEWS: View[] = [
   "providers",
   "settings",
@@ -178,8 +174,7 @@ function App() {
   }, [currentView]);
 
   const { data: settingsData } = useSettingsQuery();
-  const useAppWindowControls =
-    isLinux() && (settingsData?.useAppWindowControls ?? false);
+  const useAppWindowControls = true;
   const dragBarHeight = useAppWindowControls ? 32 : DEFAULT_DRAG_BAR_HEIGHT;
   const contentTopOffset = dragBarHeight + HEADER_HEIGHT;
   const visibleApps: VisibleApps = settingsData?.visibleApps ?? {
@@ -407,6 +402,18 @@ function App() {
     const setupWindowStateSync = async () => {
       try {
         const currentWindow = getCurrentWindow();
+        await currentWindow.setSizeConstraints(null);
+        await currentWindow.setSizeConstraints({
+          minWidth: 960,
+          minHeight: 640,
+        });
+        await currentWindow.setResizable(true);
+        await currentWindow.setMinimizable(true).catch(() => undefined);
+        await currentWindow.setMaximizable(true).catch(() => undefined);
+        if (!(await currentWindow.isMaximized())) {
+          await currentWindow.setSize(new LogicalSize(1120, 760));
+          await currentWindow.center();
+        }
         const syncWindowMaximizedState = async () => {
           const maximized = await currentWindow.isMaximized();
           if (active) {
@@ -1008,13 +1015,42 @@ function App() {
     >
       {(dragBarHeight > 0 || useAppWindowControls) && (
         <div
-          className="fixed top-0 left-0 right-0 z-[70] flex items-center justify-end px-2"
+          className="app-titlebar fixed top-0 left-0 right-0 z-[70] flex items-center justify-end px-2"
           data-tauri-drag-region
           style={{ WebkitAppRegion: "drag", height: dragBarHeight } as any}
         >
           {useAppWindowControls && (
             <div
-              className="flex items-center gap-1"
+              className="mac-window-controls items-center gap-2"
+              style={{ WebkitAppRegion: "no-drag" } as any}
+            >
+              <button
+                type="button"
+                onClick={() => void handleWindowClose()}
+                title={t("header.windowClose")}
+                className="h-3 w-3 rounded-full border border-red-500/30 bg-[#ff5f57] transition-opacity hover:opacity-90"
+              />
+              <button
+                type="button"
+                onClick={() => void handleWindowMinimize()}
+                title={t("header.windowMinimize")}
+                className="h-3 w-3 rounded-full border border-yellow-500/30 bg-[#ffbd2e] transition-opacity hover:opacity-90"
+              />
+              <button
+                type="button"
+                onClick={() => void handleWindowToggleMaximize()}
+                title={
+                  isWindowMaximized
+                    ? t("header.windowRestore")
+                    : t("header.windowMaximize")
+                }
+                className="h-3 w-3 rounded-full border border-green-500/30 bg-[#28c840] transition-opacity hover:opacity-90"
+              />
+            </div>
+          )}
+          {useAppWindowControls && (
+            <div
+              className="windows-window-controls items-center gap-1"
               style={{ WebkitAppRegion: "no-drag" } as any}
             >
               <Button
@@ -1024,7 +1060,7 @@ function App() {
                 title={t("header.windowMinimize")}
                 className="h-7 w-7"
               >
-                <Minus className="w-4 h-4" />
+                <WindowControlIcon type="minimize" />
               </Button>
               <Button
                 variant="ghost"
@@ -1037,11 +1073,9 @@ function App() {
                 }
                 className="h-7 w-7"
               >
-                {isWindowMaximized ? (
-                  <Minimize2 className="w-4 h-4" />
-                ) : (
-                  <Maximize2 className="w-4 h-4" />
-                )}
+                <WindowControlIcon
+                  type={isWindowMaximized ? "restore" : "maximize"}
+                />
               </Button>
               <Button
                 variant="ghost"
@@ -1050,7 +1084,7 @@ function App() {
                 title={t("header.windowClose")}
                 className="h-7 w-7 hover:bg-red-500/15 hover:text-red-500"
               >
-                <X className="w-4 h-4" />
+                <WindowControlIcon type="close" />
               </Button>
             </div>
           )}
@@ -1144,7 +1178,7 @@ function App() {
               <div className="flex items-center gap-2">
                 <div className="relative inline-flex items-center">
                   <a
-                    href="https://ccswitch.io"
+                    href="https://better-gate.com"
                     target="_blank"
                     rel="noreferrer"
                     className={cn(
@@ -1595,7 +1629,6 @@ function App() {
         onCancel={() => setLaunchDashboardOpen(false)}
       />
 
-      <DeepLinkImportDialog />
       <FirstRunNoticeDialog />
     </div>
   );

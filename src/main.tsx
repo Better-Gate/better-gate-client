@@ -1,6 +1,5 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
 import { UpdateProvider } from "./contexts/UpdateContext";
 import "./index.css";
 // 导入国际化配置
@@ -9,6 +8,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
 import { queryClient } from "@/lib/query";
 import { Toaster } from "@/components/ui/sonner";
+import { BetterGateLoginGate } from "@/components/BetterGateLoginGate";
+import { BetterGateDashboard } from "@/components/BetterGateDashboard";
+import { UpdatePromptDialog } from "@/components/UpdatePromptDialog";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { message } from "@tauri-apps/plugin-dialog";
@@ -18,7 +20,12 @@ import { exit } from "@tauri-apps/plugin-process";
 try {
   const ua = navigator.userAgent || "";
   const plat = (navigator.platform || "").toLowerCase();
-  const isMac = /mac/i.test(ua) || plat.includes("mac");
+  const previewPlatform =
+    import.meta.env.DEV && typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("platform")
+      : null;
+  const isMac =
+    previewPlatform === "mac" || /mac/i.test(ua) || plat.includes("mac");
   if (isMac) {
     document.body.classList.add("is-mac");
   }
@@ -39,7 +46,7 @@ interface ConfigLoadErrorPayload {
 async function handleConfigLoadError(
   payload: ConfigLoadErrorPayload | null,
 ): Promise<void> {
-  const path = payload?.path ?? "~/.cc-switch/config.json";
+  const path = payload?.path ?? "~/.better-gate-client/config.json";
   const detail = payload?.error ?? "Unknown error";
 
   await message(
@@ -89,9 +96,15 @@ async function bootstrap() {
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="system" storageKey="cc-switch-theme">
+        <ThemeProvider
+          defaultTheme="system"
+          storageKey="better-gate-client-theme"
+        >
           <UpdateProvider>
-            <App />
+            <BetterGateLoginGate>
+              <BetterGateDashboard />
+            </BetterGateLoginGate>
+            <UpdatePromptDialog />
             <Toaster />
           </UpdateProvider>
         </ThemeProvider>

@@ -2,6 +2,7 @@ import { Github, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { CodexIcon } from "@/components/BrandIcons";
+import { BetterGateAuthSection } from "@/components/settings/BetterGateAuthSection";
 import { CopilotAuthSection } from "@/components/providers/forms/CopilotAuthSection";
 import { CodexOAuthSection } from "@/components/providers/forms/CodexOAuthSection";
 
@@ -32,6 +33,10 @@ export function AuthCenterPanel() {
             {t("settings.authCenter.beta", { defaultValue: "Beta" })}
           </Badge>
         </div>
+      </section>
+
+      <section className="rounded-xl border border-emerald-500/20 bg-card/60 p-6">
+        <BetterGateAuthSection />
       </section>
 
       <section className="rounded-xl border border-border/60 bg-card/60 p-6">

@@ -69,6 +69,7 @@ interface CodexFormFieldsProps {
   // Model Catalog
   catalogModels?: CodexCatalogModel[];
   onCatalogModelsChange?: (models: CodexCatalogModel[]) => void;
+  shouldShowModelFetch?: boolean;
 
   // Speed Test Endpoints
   speedTestEndpoints: EndpointCandidate[];
@@ -127,6 +128,7 @@ export function CodexFormFields({
   onCodexChatReasoningChange,
   catalogModels = [],
   onCatalogModelsChange,
+  shouldShowModelFetch = true,
   speedTestEndpoints,
 }: CodexFormFieldsProps) {
   const { t } = useTranslation();
@@ -254,21 +256,23 @@ export function CodexFormFields({
 
   const renderCatalogActionButtons = (onAdd: () => void, addLabel: string) => (
     <div className="flex gap-1">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={handleFetchModels}
-        disabled={isFetchingModels}
-        className="h-7 gap-1"
-      >
-        {isFetchingModels ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <Download className="h-3.5 w-3.5" />
-        )}
-        {t("providerForm.fetchModels")}
-      </Button>
+      {shouldShowModelFetch ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleFetchModels}
+          disabled={isFetchingModels}
+          className="h-7 gap-1"
+        >
+          {isFetchingModels ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Download className="h-3.5 w-3.5" />
+          )}
+          {t("providerForm.fetchModels")}
+        </Button>
+      ) : null}
       <Button
         type="button"
         variant="outline"
@@ -334,11 +338,11 @@ export function CodexFormFields({
                 {needsLocalRouting
                   ? t("codexConfig.localRoutingOnHint", {
                       defaultValue:
-                        "Codex 目前仅原生支持 OpenAI Responses API 与 GPT 系列模型；如果您的供应商使用 Chat Completions 协议或非 GPT 模型（如 DeepSeek、Kimi），则需要打开本开关，并在使用过程中保持本地路由开启。",
+                        "开启后，Better Gate 客户端会在本机完成请求转换。使用期间请保持客户端运行，并在切换配置后重启 Codex。",
                     })
                   : t("codexConfig.localRoutingOffHint", {
                       defaultValue:
-                        "如果您的供应商不是原生 OpenAI Responses API，或者模型名不是 Codex 默认的 GPT 系列，请打开此开关。",
+                        "Better Gate 默认使用原生 OpenAI Responses API。仅当您要让 Codex 使用非 GPT 系列模型时，才需要打开此开关。",
                     })}
               </p>
             </div>

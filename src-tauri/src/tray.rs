@@ -3,7 +3,8 @@
 //! 负责系统托盘图标和菜单的创建、更新和事件处理。
 
 use once_cell::sync::Lazy;
-use tauri::menu::{CheckMenuItem, Menu, MenuBuilder, MenuItem, Submenu, SubmenuBuilder};
+use serde::Deserialize;
+use tauri::menu::{Menu, MenuBuilder, MenuItem, Submenu};
 use tauri::{Emitter, Manager};
 use tauri_plugin_opener::OpenerExt;
 
@@ -17,7 +18,34 @@ static TRAY_SECTION_SUBMENUS: Lazy<
     std::sync::Mutex<std::collections::HashMap<AppType, Submenu<tauri::Wry>>>,
 > = Lazy::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
 
+#[derive(Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BetterGateTrayContext {
+    pub workspace_label: Option<String>,
+    pub balance_label: Option<String>,
+    pub today_tokens_label: Option<String>,
+}
+
+static BETTER_GATE_TRAY_CONTEXT: Lazy<std::sync::Mutex<BetterGateTrayContext>> =
+    Lazy::new(|| std::sync::Mutex::new(BetterGateTrayContext::default()));
+
+pub fn update_better_gate_tray_context(
+    app: &tauri::AppHandle,
+    context: BetterGateTrayContext,
+) -> Result<bool, String> {
+    {
+        let mut guard = BETTER_GATE_TRAY_CONTEXT
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        *guard = context;
+    }
+
+    refresh_tray_menu(app);
+    Ok(true)
+}
+
 /// 托盘菜单文本（国际化）
+#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub struct TrayTexts {
     pub show_main: &'static str,
@@ -28,6 +56,7 @@ pub struct TrayTexts {
     pub _auto_label: &'static str,
 }
 
+#[allow(dead_code)]
 impl TrayTexts {
     pub fn from_language(language: &str) -> Self {
         match language {
@@ -68,6 +97,7 @@ impl TrayTexts {
 }
 
 /// 托盘应用分区配置
+#[allow(dead_code)]
 pub struct TrayAppSection {
     pub app_type: AppType,
     pub prefix: &'static str,
@@ -78,7 +108,7 @@ pub struct TrayAppSection {
 
 /// Auto 菜单项后缀
 pub const AUTO_SUFFIX: &str = "auto";
-pub const TRAY_ID: &str = "cc-switch";
+pub const TRAY_ID: &str = "better-gate";
 
 pub const TRAY_SECTIONS: [TrayAppSection; 3] = [
     TrayAppSection {
@@ -281,6 +311,7 @@ fn format_usage_suffix(
 }
 
 /// 对供应商列表排序：sort_index → created_at → name
+#[allow(dead_code)]
 fn sort_providers(
     providers: &indexmap::IndexMap<String, crate::provider::Provider>,
 ) -> Vec<(&String, &crate::provider::Provider)> {
@@ -474,141 +505,82 @@ fn handle_provider_click(
 /// 创建动态托盘菜单
 pub fn create_tray_menu(
     app: &tauri::AppHandle,
-    app_state: &AppState,
+    _app_state: &AppState,
 ) -> Result<Menu<tauri::Wry>, AppError> {
-    let app_settings = crate::settings::get_settings();
-    let tray_texts = TrayTexts::from_language(app_settings.language.as_deref().unwrap_or("zh"));
+    let tray_context = BETTER_GATE_TRAY_CONTEXT
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .clone();
+    let workspace_label = tray_context
+        .workspace_label
+        .as_deref()
+        .filter(|label| !label.trim().is_empty())
+        .unwrap_or("读取工作区");
+    let balance_label = tray_context
+        .balance_label
+        .as_deref()
+        .filter(|label| !label.trim().is_empty())
+        .unwrap_or("--");
+    let today_tokens_label = tray_context
+        .today_tokens_label
+        .as_deref()
+        .filter(|label| !label.trim().is_empty())
+        .unwrap_or("--");
 
-    // Get visible apps setting, default to all visible
-    let visible_apps = app_settings.visible_apps.unwrap_or_default();
-
-    let mut menu_builder = MenuBuilder::new(app);
-    let mut section_handles: std::collections::HashMap<AppType, Submenu<tauri::Wry>> =
-        std::collections::HashMap::new();
-
-    // 顶部：打开主界面 / 打开官方网站
-    let show_main_item =
-        MenuItem::with_id(app, "show_main", tray_texts.show_main, true, None::<&str>)
-            .map_err(|e| AppError::Message(format!("创建打开主界面菜单失败: {e}")))?;
-    let open_website_item = MenuItem::with_id(
+    let show_main_item = MenuItem::with_id(app, "show_main", "打开客户端", true, None::<&str>)
+        .map_err(|e| AppError::Message(format!("创建打开客户端菜单失败: {e}")))?;
+    let workspace_item = MenuItem::with_id(
         app,
-        "open_website",
-        tray_texts.open_website,
-        true,
+        "tray_workspace",
+        format!("工作区  {workspace_label}"),
+        false,
         None::<&str>,
     )
-    .map_err(|e| AppError::Message(format!("创建打开官方网站菜单失败: {e}")))?;
-    menu_builder = menu_builder
-        .item(&show_main_item)
-        .item(&open_website_item)
-        .separator();
-
-    // Pre-compute proxy running state (used to disable official providers in tray menu)
-    let is_proxy_running = futures::executor::block_on(app_state.proxy_service.is_running());
-
-    // 每个应用类型折叠为子菜单，避免供应商过多时菜单过长
-    for section in TRAY_SECTIONS.iter() {
-        if !visible_apps.is_visible(&section.app_type) {
-            continue;
-        }
-
-        let app_type_str = section.app_type.as_str();
-        let providers = app_state.db.get_all_providers(app_type_str)?;
-
-        let current_id =
-            crate::settings::get_effective_current_provider(&app_state.db, &section.app_type)?
-                .unwrap_or_default();
-
-        if providers.is_empty() {
-            // 空供应商：显示禁用的菜单项
-            let label = format!("{} {}", section.header_label, tray_texts.no_providers_label);
-            let empty_item = MenuItem::with_id(app, section.empty_id, &label, false, None::<&str>)
-                .map_err(|e| {
-                    AppError::Message(format!("创建{}空提示失败: {e}", section.log_name))
-                })?;
-            menu_builder = menu_builder.item(&empty_item);
-        } else {
-            let current_provider = providers.get(&current_id);
-            let submenu_label = match current_provider {
-                Some(p) => {
-                    let suffix = format_usage_suffix(app_state, &section.app_type, p, &current_id)
-                        .unwrap_or_default();
-                    format!("{} · {}{}", section.header_label, p.name, suffix)
-                }
-                None => section.header_label.to_string(),
-            };
-            let submenu_id = format!("submenu_{}", app_type_str);
-
-            // Check if this app is under proxy takeover (for disabling official providers)
-            let is_app_taken_over = is_proxy_running
-                && (futures::executor::block_on(app_state.db.get_live_backup(app_type_str))
-                    .ok()
-                    .flatten()
-                    .is_some()
-                    || app_state
-                        .proxy_service
-                        .detect_takeover_in_live_config_for_app(&section.app_type));
-
-            let mut submenu_builder = SubmenuBuilder::with_id(app, &submenu_id, &submenu_label);
-
-            for (id, provider) in sort_providers(&providers) {
-                let is_current = current_id == *id;
-                let is_official_blocked =
-                    is_app_taken_over && provider.category.as_deref() == Some("official");
-                let label = if is_official_blocked {
-                    format!("{} \u{26D4}", &provider.name) // ⛔ emoji
-                } else {
-                    provider.name.clone()
-                };
-                let item = CheckMenuItem::with_id(
-                    app,
-                    format!("{}{}", section.prefix, id),
-                    &label,
-                    !is_official_blocked, // disabled when blocked
-                    is_current,
-                    None::<&str>,
-                )
-                .map_err(|e| {
-                    AppError::Message(format!("创建{}菜单项失败: {e}", section.log_name))
-                })?;
-                submenu_builder = submenu_builder.item(&item);
-            }
-
-            let submenu = submenu_builder.build().map_err(|e| {
-                AppError::Message(format!("构建{}子菜单失败: {e}", section.log_name))
-            })?;
-            section_handles.insert(section.app_type.clone(), submenu.clone());
-            menu_builder = menu_builder.item(&submenu);
-        }
-
-        menu_builder = menu_builder.separator();
-    }
-
-    let lightweight_item = CheckMenuItem::with_id(
+    .map_err(|e| AppError::Message(format!("创建工作区菜单失败: {e}")))?;
+    let balance_item = MenuItem::with_id(
         app,
-        "lightweight_mode",
-        tray_texts.lightweight_mode,
-        true,
-        crate::lightweight::is_lightweight_mode(),
+        "tray_balance",
+        format!("余额  {balance_label}"),
+        false,
         None::<&str>,
     )
-    .map_err(|e| AppError::Message(format!("创建轻量模式菜单失败: {e}")))?;
-
-    menu_builder = menu_builder.item(&lightweight_item).separator();
-
-    // 退出菜单（分隔符已在上面的 section 循环中添加）
-    let quit_item = MenuItem::with_id(app, "quit", tray_texts.quit, true, None::<&str>)
+    .map_err(|e| AppError::Message(format!("创建余额菜单失败: {e}")))?;
+    let today_tokens_item = MenuItem::with_id(
+        app,
+        "tray_today_tokens",
+        format!("今日  {today_tokens_label} Tokens"),
+        false,
+        None::<&str>,
+    )
+    .map_err(|e| AppError::Message(format!("创建 Token 菜单失败: {e}")))?;
+    let open_console_item =
+        MenuItem::with_id(app, "open_console", "打开控制台", true, None::<&str>)
+            .map_err(|e| AppError::Message(format!("创建打开控制台菜单失败: {e}")))?;
+    let open_docs_item = MenuItem::with_id(app, "open_docs", "帮助文档", true, None::<&str>)
+        .map_err(|e| AppError::Message(format!("创建文档菜单失败: {e}")))?;
+    let quit_item = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)
         .map_err(|e| AppError::Message(format!("创建退出菜单失败: {e}")))?;
 
-    menu_builder = menu_builder.item(&quit_item);
+    let better_gate_menu_builder = MenuBuilder::new(app);
+    let better_gate_menu_builder = better_gate_menu_builder
+        .item(&show_main_item)
+        .separator()
+        .item(&workspace_item)
+        .item(&balance_item)
+        .item(&today_tokens_item)
+        .separator()
+        .item(&open_console_item)
+        .item(&open_docs_item)
+        .separator()
+        .item(&quit_item);
 
-    let menu = menu_builder
+    let menu = better_gate_menu_builder
         .build()
-        .map_err(|e| AppError::Message(format!("构建菜单失败: {e}")))?;
+        .map_err(|e| AppError::Message(format!("构建托盘菜单失败: {e}")))?;
 
     *TRAY_SECTION_SUBMENUS
         .lock()
-        .unwrap_or_else(|p| p.into_inner()) = section_handles;
+        .unwrap_or_else(|p| p.into_inner()) = std::collections::HashMap::new();
 
     Ok(menu)
 }
@@ -711,8 +683,27 @@ pub fn handle_tray_menu_event(app: &tauri::AppHandle, event_id: &str) {
             }
         }
         "open_website" => {
-            if let Err(e) = app.opener().open_url("https://ccswitch.io", None::<String>) {
+            if let Err(e) = app
+                .opener()
+                .open_url("https://better-gate.com", None::<String>)
+            {
                 log::error!("打开官方网站失败: {e}");
+            }
+        }
+        "open_console" => {
+            if let Err(e) = app
+                .opener()
+                .open_url("https://app.better-gate.com", None::<String>)
+            {
+                log::error!("打开 Better Gate 控制台失败: {e}");
+            }
+        }
+        "open_docs" => {
+            if let Err(e) = app
+                .opener()
+                .open_url("https://docs.better-gate.com", None::<String>)
+            {
+                log::error!("打开 Better Gate 文档失败: {e}");
             }
         }
         "lightweight_mode" => {

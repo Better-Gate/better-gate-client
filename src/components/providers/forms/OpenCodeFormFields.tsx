@@ -163,6 +163,7 @@ interface OpenCodeFormFieldsProps {
   // Models
   models: Record<string, OpenCodeModel>;
   onModelsChange: (models: Record<string, OpenCodeModel>) => void;
+  shouldShowModelFetch?: boolean;
 
   // Extra Options
   extraOptions: Record<string, string>;
@@ -183,6 +184,7 @@ export function OpenCodeFormFields({
   onBaseUrlChange,
   models,
   onModelsChange,
+  shouldShowModelFetch = true,
   extraOptions,
   onExtraOptionsChange,
 }: OpenCodeFormFieldsProps) {
@@ -589,21 +591,23 @@ export function OpenCodeFormFields({
             {t("opencode.models", { defaultValue: "Models" })}
           </FormLabel>
           <div className="flex gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleFetchModels}
-              disabled={isFetchingModels}
-              className="h-7 gap-1"
-            >
-              {isFetchingModels ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Download className="h-3.5 w-3.5" />
-              )}
-              {t("providerForm.fetchModels")}
-            </Button>
+            {shouldShowModelFetch ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleFetchModels}
+                disabled={isFetchingModels}
+                className="h-7 gap-1"
+              >
+                {isFetchingModels ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                {t("providerForm.fetchModels")}
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"

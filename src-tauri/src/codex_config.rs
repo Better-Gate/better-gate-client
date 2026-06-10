@@ -12,7 +12,7 @@ use std::process::Command;
 use toml_edit::DocumentMut;
 
 pub const CC_SWITCH_CODEX_MODEL_PROVIDER_ID: &str = "custom";
-pub const CC_SWITCH_CODEX_MODEL_CATALOG_FILENAME: &str = "cc-switch-model-catalog.json";
+pub const CC_SWITCH_CODEX_MODEL_CATALOG_FILENAME: &str = "better-gate-model-catalog.json";
 const CODEX_MODEL_CATALOG_TEMPLATE_SLUG: &str = "gpt-5.5";
 
 /// Reserved built-in provider IDs from OpenAI Codex's config/model-provider

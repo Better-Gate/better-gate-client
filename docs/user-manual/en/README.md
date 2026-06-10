@@ -39,7 +39,6 @@ CC Switch User Manual
 └── 5. FAQ
     ├── 5.1 Configuration Files
     ├── 5.2 FAQ
-    ├── 5.3 Deep Link Protocol
     └── 5.4 Environment Variable Conflicts
 ```
 
@@ -92,7 +91,6 @@ CC Switch User Manual
 |------|-------------|
 | [5.1-config-files.md](./5-faq/5.1-config-files.md) | CC Switch storage, CLI configuration file formats |
 | [5.2-questions.md](./5-faq/5.2-questions.md) | Frequently asked questions |
-| [5.3-deeplink.md](./5-faq/5.3-deeplink.md) | Deep link protocol, generation and usage |
 | [5.4-env-conflict.md](./5-faq/5.4-env-conflict.md) | Environment variable conflict detection and resolution |
 
 ## Quick Links

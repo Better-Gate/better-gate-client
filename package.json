@@ -1,7 +1,7 @@
 {
-  "name": "cc-switch",
+  "name": "better-gate-client",
   "version": "3.16.1",
-  "description": "All-in-One Assistant for Claude Code, Codex & Gemini CLI",
+  "description": "Better Gate desktop client for Claude Code, Codex, Gemini CLI, and more",
   "type": "module",
   "scripts": {
     "dev": "pnpm tauri dev",
@@ -16,7 +16,12 @@
     "test:unit:watch": "vitest watch"
   },
   "keywords": [],
-  "author": "Jason Young",
+  "author": "Freesia Labs LLC",
+  "homepage": "https://better-gate.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Better-Gate/better-gate-client.git"
+  },
   "license": "MIT",
   "devDependencies": {
     "@tauri-apps/cli": "^2.8.0",

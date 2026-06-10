@@ -115,6 +115,7 @@ interface ClaudeFormFieldsProps {
 
   // Model Selector
   shouldShowModelSelector: boolean;
+  shouldShowModelActions?: boolean;
   claudeModel: string;
   defaultHaikuModel: string;
   defaultHaikuModelName: string;
@@ -175,6 +176,7 @@ export function ClaudeFormFields({
   onAutoSelectChange,
   showEndpointTools = true,
   shouldShowModelSelector,
+  shouldShowModelActions = true,
   claudeModel,
   defaultHaikuModel,
   defaultHaikuModelName,
@@ -768,6 +770,7 @@ export function ClaudeFormFields({
             <div className="space-y-1 pt-2 border-t">
               <div className="flex items-center justify-between">
                 <FormLabel>{t("providerForm.modelMappingLabel")}</FormLabel>
+                {shouldShowModelActions ? (
                 <div className="flex gap-2">
                   {/* 一键设置按钮 */}
                   <Button
@@ -827,6 +830,7 @@ export function ClaudeFormFields({
                     {t("providerForm.fetchModels")}
                   </Button>
                 </div>
+                ) : null}
               </div>
               <p className="text-xs text-muted-foreground">
                 {t("providerForm.modelMappingHint")}

@@ -39,7 +39,6 @@ CC Switch ユーザーマニュアル
 └── 5. よくある質問
     ├── 5.1 設定ファイルの説明
     ├── 5.2 FAQ
-    ├── 5.3 ディープリンクプロトコル
     └── 5.4 環境変数の競合
 ```
 
@@ -92,7 +91,6 @@ CC Switch ユーザーマニュアル
 |------|------|
 | [5.1-config-files.md](./5-faq/5.1-config-files.md) | CC Switch のストレージ、CLI 設定ファイル形式 |
 | [5.2-questions.md](./5-faq/5.2-questions.md) | よくある質問と回答 |
-| [5.3-deeplink.md](./5-faq/5.3-deeplink.md) | ディープリンクプロトコル、生成と使用方法 |
 | [5.4-env-conflict.md](./5-faq/5.4-env-conflict.md) | 環境変数の競合検出と対処 |
 
 ## クイックリンク

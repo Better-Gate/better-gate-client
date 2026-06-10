@@ -6,6 +6,9 @@ use std::path::{Path, PathBuf};
 
 use crate::error::AppError;
 
+pub const APP_CONFIG_DIR_NAME: &str = ".better-gate-client";
+pub const APP_DATABASE_FILENAME: &str = "better-gate-client.db";
+
 /// 获取用户主目录，带回退和日志
 ///
 /// ## Windows 注意事项
@@ -92,7 +95,7 @@ pub fn get_app_config_dir() -> PathBuf {
         return custom;
     }
 
-    let default_dir = get_home_dir().join(".cc-switch");
+    let default_dir = get_home_dir().join(APP_CONFIG_DIR_NAME);
 
     // 兼容 v3.10.3：当用户环境存在 `HOME` 且与真实用户目录不同，
     // v3.10.3 可能在 `HOME/.cc-switch/` 下创建/使用了数据库。
@@ -100,13 +103,13 @@ pub fn get_app_config_dir() -> PathBuf {
     // 同时也避免新安装因为 `HOME` 被设置而写入非预期路径。
     #[cfg(windows)]
     {
-        let default_db = default_dir.join("cc-switch.db");
+        let default_db = default_dir.join(APP_DATABASE_FILENAME);
         if !default_db.exists() {
             if let Ok(home_env) = std::env::var("HOME") {
                 let trimmed = home_env.trim();
                 if !trimmed.is_empty() {
-                    let legacy_dir = PathBuf::from(trimmed).join(".cc-switch");
-                    if legacy_dir.join("cc-switch.db").exists() {
+                    let legacy_dir = PathBuf::from(trimmed).join(APP_CONFIG_DIR_NAME);
+                    if legacy_dir.join(APP_DATABASE_FILENAME).exists() {
                         log::info!(
                             "Detected v3.10.3 legacy database at {}, using it instead of {}",
                             legacy_dir.display(),

@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "CC Switch",
-    "description": "Claude Code・Codex・Gemini CLI のためのオールインワンアシスタント"
+    "title": "Better Gate",
+    "description": "Better Gate デスクトップクライアント"
   },
   "common": {
     "add": "追加",
@@ -43,9 +43,9 @@
     "notSet": "未設定"
   },
   "firstRunNotice": {
-    "title": "CC Switch へようこそ",
-    "bodyDefault": "CC Switch は Claude Code / Codex / Gemini CLI の複数プロバイダーをワンクリックで切り替えられるツールです。すでにこれらのツールを設定済みの場合、CC Switch は現在の設定を「default」という名前のプロバイダーとして自動的に保存するので、既存の設定が失われることはありません。",
-    "bodyOfficial": "リストには「Official（公式）」プリセットも用意されており、公式バージョンに戻したくなったらクリックするだけで切り替えられます。切り替える前に現在の設定は自動で default にバックアップされるので、自由に行き来できます。これが CC Switch の仕組みです 😊",
+    "title": "Better Gate へようこそ",
+    "bodyDefault": "Better Gate は Claude Code、Codex、Gemini CLI などのローカル開発ツールをひとつの AI Gateway に接続します。",
+    "bodyOfficial": "ログイン後、ワークスペースとツールを選び、利用可能な API Key をインポートしてください。プロバイダーを切り替えた後は対象クライアントを再起動してください。",
     "confirm": "了解しました"
   },
   "apiKeyInput": {
@@ -503,7 +503,7 @@
         "synologyHint": "Synology の「パッケージセンター」で WebDAV Server パッケージをインストール・有効化してください。",
         "custom": "カスタム"
       },
-      "remoteRootDefault": "デフォルト: cc-switch-sync",
+      "remoteRootDefault": "デフォルト: better-gate-client-sync",
       "profileDefault": "デフォルト: default",
       "saveAndTestSuccess": "設定を保存しました。接続正常です",
       "saveAndTestFailed": "設定を保存しましたが、接続テストに失敗しました：{{error}}",
@@ -1124,8 +1124,8 @@
     "modelNameHint": "使用するモデルを指定します。config.toml に自動更新されます",
     "modelName": "モデル名",
     "localRoutingToggle": "ローカルルーティングが必要",
-    "localRoutingOffHint": "プロバイダーがネイティブの OpenAI Responses API でない場合、またはモデル名が Codex デフォルトの GPT 系列でない場合は、このスイッチを有効にしてください。",
-    "localRoutingOnHint": "Codex は現在、OpenAI Responses API と GPT 系列モデルのみをネイティブにサポートしています。プロバイダーが Chat Completions プロトコルや非 GPT モデル（DeepSeek、Kimi など）を使用する場合は、このスイッチを有効にし、使用中はローカルルーティングを起動したままにしてください。",
+    "localRoutingOffHint": "Better Gate はデフォルトでネイティブの OpenAI Responses API を使用します。Codex で GPT 系列以外のモデルを使う場合のみ、このスイッチを有効にしてください。",
+    "localRoutingOnHint": "有効にすると、Better Gate クライアントがローカルでリクエストを変換します。Codex の使用中はクライアントを起動したままにし、設定を切り替えた後は Codex を再起動してください。",
     "upstreamModelName": "上流モデル名",
     "upstreamModelNameHint": "Chat 形式ではここに実際の上流モデルを入力します。ルーティングで Codex の Responses リクエストを Chat Completions に変換し、このモデルを維持します。",
     "modelNamePlaceholder": "例: gpt-5-codex",
@@ -2062,80 +2062,6 @@
       "successMultiple": "{{count}} 件のスキルをインストールしました",
       "noSkillsFound": "ZIP ファイルにスキルが見つかりません（SKILL.md が必要です）"
     }
-  },
-  "deeplink": {
-    "confirmImport": "プロバイダーのインポートを確認",
-    "confirmImportDescription": "次の設定をディープリンクから CC Switch へインポートします",
-    "importPrompt": "プロンプトをインポート",
-    "importPromptDescription": "このシステムプロンプトをインポートするか確認してください",
-    "importMcp": "MCP サーバーをインポート",
-    "importMcpDescription": "これらの MCP サーバーをインポートするか確認してください",
-    "importSkill": "スキルリポジトリを追加",
-    "importSkillDescription": "このスキルリポジトリを追加するか確認してください",
-    "promptImportSuccess": "プロンプトをインポートしました",
-    "promptImportSuccessDescription": "インポートされたプロンプト: {{name}}",
-    "mcpImportSuccess": "MCP サーバーをインポートしました",
-    "mcpImportSuccessDescription": "{{count}} 件のサーバーをインポートしました",
-    "mcpPartialSuccess": "一部のみインポート成功",
-    "mcpPartialSuccessDescription": "成功: {{success}}、失敗: {{failed}}",
-    "skillImportSuccess": "スキルリポジトリを追加しました",
-    "skillImportSuccessDescription": "追加したリポジトリ: {{repo}}",
-    "app": "アプリ種別",
-    "providerName": "プロバイダー名",
-    "homepage": "ホームページ",
-    "endpoint": "API エンドポイント",
-    "apiKey": "API Key",
-    "icon": "アイコン",
-    "model": "モデル",
-    "haikuModel": "Haiku モデル",
-    "sonnetModel": "Sonnet モデル",
-    "opusModel": "Opus モデル",
-    "multiModel": "マルチモーダルモデル",
-    "notes": "メモ",
-    "import": "インポート",
-    "importing": "インポート中...",
-    "warning": "インポート前に内容を確認してください。後から一覧で編集・削除できます。",
-    "parseError": "ディープリンクの解析に失敗しました",
-    "importSuccess": "インポート成功",
-    "importSuccessDescription": "プロバイダー「{{name}}」をインポートしました",
-    "importError": "インポートに失敗しました",
-    "configSource": "設定ソース",
-    "configEmbedded": "埋め込み設定",
-    "configRemote": "リモート設定",
-    "configDetails": "設定の詳細",
-    "configUrl": "設定ファイル URL",
-    "configMergeError": "設定ファイルのマージに失敗しました",
-    "primaryEndpoint": "メイン",
-    "mcp": {
-      "title": "MCP サーバーを一括インポート",
-      "targetApps": "ターゲットアプリ",
-      "serverCount": "MCP サーバー（{{count}} 件）",
-      "enabledWarning": "インポート後、指定したすべてのアプリに即座に書き込まれます"
-    },
-    "prompt": {
-      "title": "システムプロンプトをインポート",
-      "app": "アプリ",
-      "name": "名前",
-      "description": "説明",
-      "contentPreview": "内容プレビュー",
-      "enabledWarning": "インポート後すぐにこのプロンプトが有効になり、他は無効になります"
-    },
-    "skill": {
-      "title": "Claude スキルリポジトリを追加",
-      "repo": "GitHub リポジトリ",
-      "directory": "対象ディレクトリ",
-      "branch": "ブランチ",
-      "skillsPath": "スキルパス",
-      "hint": "この操作でスキルリポジトリが一覧に追加されます。",
-      "hintDetail": "追加後、スキル管理ページから個別のスキルをインストールできます。"
-    },
-    "usageScript": "使用量クエリ",
-    "usageScriptEnabled": "有効",
-    "usageScriptDisabled": "無効",
-    "usageApiKey": "使用量 API キー",
-    "usageBaseUrl": "使用量クエリ URL",
-    "usageAutoInterval": "自動クエリ",
-    "usageAutoIntervalValue": "{{minutes}} 分ごと"
   },
   "iconPicker": {
     "search": "アイコンを検索",

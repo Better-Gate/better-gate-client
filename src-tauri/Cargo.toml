@@ -1,10 +1,11 @@
 [package]
-name = "cc-switch"
+name = "better-gate-client"
 version = "3.16.1"
-description = "All-in-One Assistant for Claude Code, Codex & Gemini CLI"
-authors = ["Jason Young"]
+description = "Better Gate desktop client for Claude Code, Codex, Gemini CLI, and more"
+authors = ["Freesia Labs LLC"]
 license = "MIT"
-repository = "https://github.com/farion1231/cc-switch"
+repository = "https://github.com/Better-Gate/better-gate-client"
+homepage = "https://better-gate.com"
 edition = "2021"
 rust-version = "1.85.0"
 
@@ -34,7 +35,6 @@ tauri-plugin-process = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-store = "2"
-tauri-plugin-deep-link = "2"
 tauri-plugin-window-state = "2"
 dirs = "5.0"
 toml = "0.8"

@@ -41,6 +41,7 @@ interface GeminiFormFieldsProps {
 
   // Model
   shouldShowModelField: boolean;
+  shouldShowModelFetch?: boolean;
   model: string;
   onModelChange: (value: string) => void;
 
@@ -67,6 +68,7 @@ export function GeminiFormFields({
   autoSelect,
   onAutoSelectChange,
   shouldShowModelField,
+  shouldShowModelFetch = true,
   model,
   onModelChange,
   speedTestEndpoints,
@@ -165,21 +167,23 @@ export function GeminiFormFields({
             <FormLabel htmlFor="gemini-model">
               {t("provider.form.gemini.model", { defaultValue: "模型" })}
             </FormLabel>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleFetchModels}
-              disabled={isFetchingModels}
-              className="h-7 gap-1"
-            >
-              {isFetchingModels ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Download className="h-3.5 w-3.5" />
-              )}
-              {t("providerForm.fetchModels")}
-            </Button>
+            {shouldShowModelFetch ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleFetchModels}
+                disabled={isFetchingModels}
+                className="h-7 gap-1"
+              >
+                {isFetchingModels ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                {t("providerForm.fetchModels")}
+              </Button>
+            ) : null}
           </div>
           <ModelInputWithFetch
             id="gemini-model"
