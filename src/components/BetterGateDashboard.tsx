@@ -64,6 +64,7 @@ import {
   type BetterGateDesktopUsageSummaryResponse,
   type BetterGateDesktopWorkspace,
 } from "@/lib/api/betterGateDesktop";
+import { isBetterGateProviderForContext } from "@/lib/betterGateConnect";
 
 const SELECTED_WORKSPACE_KEY = "better-gate:desktop-dashboard-workspace";
 const BETTER_GATE_DOCS_URL = "https://docs.better-gate.com";
@@ -197,18 +198,6 @@ function getWorkspaceFallbackLabel(
 ) {
   const title = getWorkspaceTitle(workspace, user).trim();
   return title.slice(0, 1).toUpperCase() || "B";
-}
-
-function isBetterGateProvider(provider: {
-  id: string;
-  icon?: string;
-  notes?: string;
-}) {
-  return (
-    provider.id.startsWith("better-gate-") ||
-    provider.icon === "bettergate" ||
-    provider.notes?.includes("Better Gate")
-  );
 }
 
 function WindowControls() {
@@ -827,18 +816,32 @@ export function BetterGateDashboard() {
   const todayTokens = summary?.usage.today.totalTokens ?? 0;
 
   const loadToolStatuses = useCallback(async () => {
+    if (!user || !selectedWorkspace) {
+      setToolStatuses({});
+      return;
+    }
+
     try {
       const entries = await Promise.all(
         toolOptions.map(async (tool) => {
-          const providers = await providersApi.getAll(tool.id);
-          const provider = Object.values(providers).find(isBetterGateProvider);
-          const configured = Boolean(provider);
+          const [providers, currentProviderId] = await Promise.all([
+            providersApi.getAll(tool.id),
+            providersApi.getCurrent(tool.id),
+          ]);
+          const provider = providers[currentProviderId] ?? null;
+          const isCurrentBetterGateProvider = isBetterGateProviderForContext(
+            provider,
+            {
+              user,
+              workspace: selectedWorkspace,
+            },
+          );
 
           return [
             tool.id,
             {
-              configured,
-              name: configured ? provider?.name : undefined,
+              configured: isCurrentBetterGateProvider,
+              name: isCurrentBetterGateProvider ? provider?.name : undefined,
             },
           ] as const;
         }),
@@ -854,7 +857,7 @@ export function BetterGateDashboard() {
         toast.error("读取工具接入状态失败", { closeButton: true });
       }
     }
-  }, []);
+  }, [selectedWorkspace, user]);
 
   const loadUser = useCallback(async () => {
     try {
@@ -921,8 +924,11 @@ export function BetterGateDashboard() {
   useEffect(() => {
     void loadUser();
     void loadWorkspaces();
+  }, [loadUser, loadWorkspaces]);
+
+  useEffect(() => {
     void loadToolStatuses();
-  }, [loadToolStatuses, loadUser, loadWorkspaces]);
+  }, [loadToolStatuses]);
 
   useEffect(() => {
     if (!selectedWorkspaceId) {

@@ -324,17 +324,37 @@ function createProviderId(toolId: AppId, apiKeyId: string) {
   return `better-gate-${toolId}-${apiKeyId}`;
 }
 
+function createBetterGateProviderBinding(input: {
+  user: BetterGateDesktopUser;
+  workspace: BetterGateDesktopWorkspace;
+  apiKey: BetterGateDesktopApiKey;
+}): NonNullable<Provider["meta"]>["betterGate"] {
+  return {
+    userId: input.user.id,
+    workspaceId: input.workspace.id,
+    workspaceType: input.workspace.type,
+    memberId: input.workspace.memberId ?? null,
+    apiKeyId: input.apiKey.id,
+  };
+}
+
 function tomlString(value: string) {
   return JSON.stringify(value);
 }
 
 function createCommonMeta(
   now: number,
+  owner: {
+    user: BetterGateDesktopUser;
+    workspace: BetterGateDesktopWorkspace;
+    apiKey: BetterGateDesktopApiKey;
+  },
   extra?: Provider["meta"],
   baseUrl = BETTER_GATE_BASE_URL,
 ): Provider["meta"] {
   return {
     ...(extra ?? {}),
+    betterGate: createBetterGateProviderBinding(owner),
     custom_endpoints: {
       [baseUrl]: {
         url: baseUrl,
@@ -346,6 +366,8 @@ function createCommonMeta(
 
 export function createBetterGateProvider(input: {
   toolId: AppId;
+  user: BetterGateDesktopUser;
+  workspace: BetterGateDesktopWorkspace;
   apiKey: BetterGateDesktopApiKey;
   secret: string;
 }): Provider {
@@ -392,6 +414,7 @@ requires_openai_auth = true`,
       },
       meta: createCommonMeta(
         now,
+        input,
         {
           apiFormat: "openai_responses",
           isFullUrl: false,
@@ -411,7 +434,7 @@ requires_openai_auth = true`,
           GEMINI_MODEL: primaryModel,
         },
       },
-      meta: createCommonMeta(now, {
+      meta: createCommonMeta(now, input, {
         apiFormat: "gemini_native",
         isFullUrl: false,
       }),
@@ -435,6 +458,7 @@ requires_openai_auth = true`,
       },
       meta: createCommonMeta(
         now,
+        input,
         {
           isFullUrl: false,
         },
@@ -457,6 +481,7 @@ requires_openai_auth = true`,
       },
       meta: createCommonMeta(
         now,
+        input,
         {
           isFullUrl: false,
         },
@@ -480,6 +505,7 @@ requires_openai_auth = true`,
       },
       meta: createCommonMeta(
         now,
+        input,
         {
           isFullUrl: false,
         },
@@ -500,7 +526,7 @@ requires_openai_auth = true`,
         ANTHROPIC_DEFAULT_HAIKU_MODEL: haikuModel,
       },
     },
-    meta: createCommonMeta(now, {
+    meta: createCommonMeta(now, input, {
       apiFormat: "anthropic",
       apiKeyField: "ANTHROPIC_AUTH_TOKEN",
       claudeDesktopMode:
@@ -773,8 +799,15 @@ export function BetterGateOnboarding({
 
   const importSecret = useCallback(
     async (secret: string, apiKey: BetterGateDesktopApiKey) => {
+      if (!user || !selectedWorkspace) {
+        setErrorMessage("请先选择一个工作区。");
+        return;
+      }
+
       const provider = createBetterGateProvider({
         toolId: selectedToolId,
+        user,
+        workspace: selectedWorkspace,
         apiKey,
         secret,
       });
@@ -787,7 +820,7 @@ export function BetterGateOnboarding({
         closeButton: true,
       });
     },
-    [selectedToolId],
+    [selectedToolId, selectedWorkspace, user],
   );
 
   const handleCreateAndImport = async () => {

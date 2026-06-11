@@ -49,6 +49,14 @@ export interface EndpointCandidate {
   isCustom?: boolean;
 }
 
+export interface BetterGateProviderMeta {
+  userId: string;
+  workspaceId: string;
+  workspaceType: "personal" | "organization";
+  memberId?: string | null;
+  apiKeyId: string;
+}
+
 import type { TemplateType } from "./config/constants";
 
 // 用量查询脚本配置
@@ -223,6 +231,8 @@ export interface ProviderMeta {
   providerType?: string;
   // GitHub Copilot 关联账号 ID（旧字段，保留兼容读取）
   githubAccountId?: string;
+  // Better Gate desktop import ownership. Used only by the Better Gate client.
+  betterGate?: BetterGateProviderMeta;
 }
 
 // Skill 同步方式

@@ -168,17 +168,95 @@ function createProviderId(toolId: AppId, apiKeyId: string) {
   return `better-gate-${toolId}-${apiKeyId}`;
 }
 
+type BetterGateProviderContext = {
+  user?: Pick<BetterGateDesktopUser, "id"> | null;
+  workspace?: Pick<BetterGateDesktopWorkspace, "id" | "type" | "memberId"> | null;
+  apiKeyId?: string | null;
+};
+
+function createBetterGateProviderBinding(input: {
+  user: BetterGateDesktopUser;
+  workspace: BetterGateDesktopWorkspace;
+  apiKey: BetterGateDesktopApiKey;
+}): NonNullable<Provider["meta"]>["betterGate"] {
+  return {
+    userId: input.user.id,
+    workspaceId: input.workspace.id,
+    workspaceType: input.workspace.type,
+    memberId: input.workspace.memberId ?? null,
+    apiKeyId: input.apiKey.id,
+  };
+}
+
+export function isBetterGateProvider(provider?: {
+  id: string;
+  icon?: string;
+  notes?: string;
+} | null) {
+  return Boolean(
+    provider &&
+      (provider.id.startsWith("better-gate-") ||
+        provider.icon === "bettergate" ||
+        provider.notes?.includes("Better Gate")),
+  );
+}
+
+export function isBetterGateProviderForContext(
+  provider: (Pick<Provider, "id" | "icon" | "notes" | "meta">) | null | undefined,
+  context: BetterGateProviderContext,
+) {
+  if (!provider || !context.user || !context.workspace) {
+    return false;
+  }
+
+  if (!isBetterGateProvider(provider)) {
+    return false;
+  }
+
+  const binding = provider.meta?.betterGate;
+  if (!binding) {
+    return false;
+  }
+
+  if (
+    binding.userId !== context.user.id ||
+    binding.workspaceId !== context.workspace.id ||
+    binding.workspaceType !== context.workspace.type
+  ) {
+    return false;
+  }
+
+  if (
+    context.workspace.type === "organization" &&
+    (binding.memberId ?? null) !== (context.workspace.memberId ?? null)
+  ) {
+    return false;
+  }
+
+  if (context.apiKeyId && binding.apiKeyId !== context.apiKeyId) {
+    return false;
+  }
+
+  return true;
+}
+
 function tomlString(value: string) {
   return JSON.stringify(value);
 }
 
 function createCommonMeta(
   now: number,
+  owner: {
+    user: BetterGateDesktopUser;
+    workspace: BetterGateDesktopWorkspace;
+    apiKey: BetterGateDesktopApiKey;
+  },
   extra?: Provider["meta"],
   baseUrl = BETTER_GATE_BASE_URL,
 ): Provider["meta"] {
   return {
     ...(extra ?? {}),
+    betterGate: createBetterGateProviderBinding(owner),
     custom_endpoints: {
       [baseUrl]: {
         url: baseUrl,
@@ -190,6 +268,8 @@ function createCommonMeta(
 
 export function createBetterGateProvider(input: {
   toolId: AppId;
+  user: BetterGateDesktopUser;
+  workspace: BetterGateDesktopWorkspace;
   apiKey: BetterGateDesktopApiKey;
   secret: string;
 }): Provider {
@@ -232,6 +312,7 @@ requires_openai_auth = true`,
       },
       meta: createCommonMeta(
         now,
+        input,
         {
           apiFormat: "openai_responses",
           isFullUrl: false,
@@ -251,7 +332,7 @@ requires_openai_auth = true`,
           GEMINI_MODEL: primaryModel,
         },
       },
-      meta: createCommonMeta(now, {
+      meta: createCommonMeta(now, input, {
         apiFormat: "gemini_native",
         isFullUrl: false,
       }),
@@ -275,6 +356,7 @@ requires_openai_auth = true`,
       },
       meta: createCommonMeta(
         now,
+        input,
         {
           isFullUrl: false,
         },
@@ -297,6 +379,7 @@ requires_openai_auth = true`,
       },
       meta: createCommonMeta(
         now,
+        input,
         {
           isFullUrl: false,
         },
@@ -320,6 +403,7 @@ requires_openai_auth = true`,
       },
       meta: createCommonMeta(
         now,
+        input,
         {
           isFullUrl: false,
         },
@@ -340,7 +424,7 @@ requires_openai_auth = true`,
         ANTHROPIC_DEFAULT_HAIKU_MODEL: haikuModel,
       },
     },
-    meta: createCommonMeta(now, {
+    meta: createCommonMeta(now, input, {
       apiFormat: "anthropic",
       apiKeyField: "ANTHROPIC_AUTH_TOKEN",
       claudeDesktopMode:

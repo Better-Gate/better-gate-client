@@ -56,6 +56,7 @@ import {
   getBetterGateDefaultKeyName,
   getBetterGateWorkspaceTitle,
   isBetterGateApiKeyDirectlyImportable,
+  isBetterGateProviderForContext,
   normalizeBetterGateDefaultModel,
   normalizeBetterGateModelFamily,
   sortBetterGateApiKeys,
@@ -348,17 +349,6 @@ function slugValue(value: string) {
 
 function createProviderKey(toolId: AppId, apiKeyId: string) {
   return slugValue(`better-gate-${toolId}-${apiKeyId}`);
-}
-
-function createRawProviderKey(toolId: AppId, apiKeyId: string) {
-  return `better-gate-${toolId}-${apiKeyId}`;
-}
-
-function getBetterGateProviderKeys(toolId: AppId, apiKeyId: string) {
-  return new Set([
-    createProviderKey(toolId, apiKeyId),
-    createRawProviderKey(toolId, apiKeyId),
-  ]);
 }
 
 function modelDisplayName(model: string) {
@@ -1124,6 +1114,8 @@ ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME=${haikuDisplayName}`,
 
 function createBetterGateProviderFromManualDraft(input: {
   toolId: AppId;
+  user: BetterGateDesktopUser;
+  workspace: BetterGateDesktopWorkspace;
   apiKey: BetterGateDesktopApiKey;
   draft: ManualConfigDraft;
 }): Provider {
@@ -1193,6 +1185,8 @@ function createBetterGateProviderFromManualDraft(input: {
     parseJsonArray(input.draft.codexModelCatalog, "Codex 模型目录") ?? [];
   const provider = createBetterGateProvider({
     toolId: input.toolId,
+    user: input.user,
+    workspace: input.workspace,
     apiKey: input.apiKey,
     secret: apiKeySecret,
   });
@@ -1444,13 +1438,27 @@ export function BetterGateToolConnectPage({
 
   const syncImportedApiKeys = useCallback(
     async (keys: BetterGateDesktopApiKey[]) => {
+      if (!user || !selectedWorkspace) {
+        setImportedApiKeyIds(new Set());
+        return;
+      }
+
       try {
-        const currentProviderId = await providersApi.getCurrent(tool.id);
+        const [providers, currentProviderId] = await Promise.all([
+          providersApi.getAll(tool.id),
+          providersApi.getCurrent(tool.id),
+        ]);
+        const currentProvider = providers[currentProviderId] ?? null;
         const importedIds = new Set<string>();
 
         for (const apiKey of keys) {
-          const expectedProviderIds = getBetterGateProviderKeys(tool.id, apiKey.id);
-          if (expectedProviderIds.has(currentProviderId)) {
+          if (
+            isBetterGateProviderForContext(currentProvider, {
+              user,
+              workspace: selectedWorkspace,
+              apiKeyId: apiKey.id,
+            })
+          ) {
             importedIds.add(apiKey.id);
             break;
           }
@@ -1464,7 +1472,7 @@ export function BetterGateToolConnectPage({
         );
       }
     },
-    [tool.id],
+    [selectedWorkspace, tool.id, user],
   );
 
   const loadApiKeys = useCallback(async (workspaceId: string) => {
@@ -1566,8 +1574,15 @@ export function BetterGateToolConnectPage({
     secret: string,
     apiKey: BetterGateDesktopApiKey,
   ) => {
+    if (!user || !selectedWorkspace) {
+      setErrorMessage("请先选择工作区。");
+      return;
+    }
+
     const provider = createBetterGateProvider({
       toolId: tool.id,
+      user,
+      workspace: selectedWorkspace,
       apiKey,
       secret,
     });
@@ -2284,12 +2299,19 @@ export function BetterGateToolConnectPage({
       return;
     }
 
+    if (!user || !selectedWorkspace) {
+      setManualErrorMessage("请先选择工作区。");
+      return;
+    }
+
     setIsSavingManualConfig(true);
     setManualErrorMessage(null);
 
     try {
       const provider = createBetterGateProviderFromManualDraft({
         toolId: tool.id,
+        user,
+        workspace: selectedWorkspace,
         apiKey: selectedApiKey,
         draft: manualDraft,
       });
