@@ -59,7 +59,6 @@ pub use store::AppState;
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
 use std::sync::Arc;
-#[cfg(target_os = "macos")]
 use tauri::image::Image;
 use tauri::tray::{TrayIconBuilder, TrayIconEvent};
 use tauri::Manager;
@@ -127,14 +126,13 @@ async fn update_better_gate_tray_context(
     tray::update_better_gate_tray_context(&app, context)
 }
 
-#[cfg(target_os = "macos")]
-fn macos_tray_icon() -> Option<Image<'static>> {
-    const ICON_BYTES: &[u8] = include_bytes!("../icons/tray/macos/statusbar_template_3x.png");
+fn tray_icon() -> Option<Image<'static>> {
+    const ICON_BYTES: &[u8] = include_bytes!("../icons/tray/status.png");
 
     match Image::from_bytes(ICON_BYTES) {
         Ok(icon) => Some(icon),
         Err(err) => {
-            log::warn!("Failed to load macOS tray icon: {err}");
+            log::warn!("Failed to load tray icon: {err}");
             None
         }
     }
@@ -703,7 +701,7 @@ pub fn run() {
             // 使用平台对应的托盘图标（macOS 使用模板图标适配深浅色）
             #[cfg(target_os = "macos")]
             {
-                if let Some(icon) = macos_tray_icon() {
+                if let Some(icon) = tray_icon() {
                     tray_builder = tray_builder.icon(icon).icon_as_template(true);
                 } else if let Some(icon) = app.default_window_icon() {
                     log::warn!("Falling back to default window icon for tray");
@@ -715,7 +713,10 @@ pub fn run() {
 
             #[cfg(not(target_os = "macos"))]
             {
-                if let Some(icon) = app.default_window_icon() {
+                if let Some(icon) = tray_icon() {
+                    tray_builder = tray_builder.icon(icon);
+                } else if let Some(icon) = app.default_window_icon() {
+                    log::warn!("Falling back to default window icon for tray");
                     tray_builder = tray_builder.icon(icon.clone());
                 } else {
                     log::warn!("Failed to get default window icon for tray");
