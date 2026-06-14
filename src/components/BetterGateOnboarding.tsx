@@ -417,12 +417,12 @@ export function createBetterGateProvider(input: {
         auth: {
           OPENAI_API_KEY: input.secret,
         },
-        config: `model_provider = "bettergate"
+        config: `model_provider = ${tomlString(BETTER_GATE_CODEX_PROVIDER_NAME)}
 model = ${tomlString(primaryModel)}
 model_reasoning_effort = "high"
 disable_response_storage = true
 
-[model_providers.bettergate]
+[model_providers.${BETTER_GATE_CODEX_PROVIDER_NAME}]
 name = ${tomlString(BETTER_GATE_CODEX_PROVIDER_NAME)}
 base_url = ${tomlString(BETTER_GATE_OPENAI_BASE_URL)}
 wire_api = "responses"

@@ -694,12 +694,12 @@ export function buildManualConfig(input: {
         {
           title: "~/.codex/config.toml",
           description: "把下面内容合并到 Codex 的 config.toml。",
-          content: `model_provider = "bettergate"
+          content: `model_provider = ${quoted(BETTER_GATE_CODEX_PROVIDER_NAME)}
 model = ${quoted(DEFAULT_CODE_MODEL)}
 model_reasoning_effort = "high"
 disable_response_storage = true
 
-[model_providers.bettergate]
+[model_providers.${BETTER_GATE_CODEX_PROVIDER_NAME}]
 name = ${quoted(BETTER_GATE_CODEX_PROVIDER_NAME)}
 base_url = ${quoted(baseUrl)}
 wire_api = "responses"
@@ -2200,7 +2200,7 @@ export function BetterGateToolConnectPage({
               onChange={(event) =>
                 updateManualDraft("codexProviderId", event.target.value.trim())
               }
-              placeholder="bettergate"
+              placeholder={BETTER_GATE_CODEX_PROVIDER_NAME}
             />
             <p className="text-xs leading-5 text-neutral-400">
               Codex
