@@ -332,7 +332,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Better Gate ${{ github.ref_name }}
-          prerelease: true
+          prerelease: false
           body: |
             ## Better Gate ${{ github.ref_name }}
 

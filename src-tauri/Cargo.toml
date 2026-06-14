@@ -1,6 +1,6 @@
 [package]
 name = "better-gate-client"
-version = "0.1.0"
+version = "0.1.1"
 description = "Better Gate desktop client for Claude Code, Codex, Gemini CLI, and more"
 authors = ["Freesia Labs LLC"]
 license = "MIT"

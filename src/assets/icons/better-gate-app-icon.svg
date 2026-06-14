@@ -1,4 +1,5 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Better Gate">
+  <rect width="1024" height="1024" rx="224" fill="#FFFFFF"/>
   <g fill="#000000" shape-rendering="crispEdges">
     <rect x="192" y="192" width="160" height="160"/>
     <rect x="352" y="192" width="160" height="160"/>

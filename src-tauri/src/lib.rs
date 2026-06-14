@@ -698,11 +698,11 @@ pub fn run() {
                 })
                 .show_menu_on_left_click(true);
 
-            // 使用平台对应的托盘图标（macOS 使用模板图标适配深浅色）
+            // Use the same white-background mark across the app icon and tray icon.
             #[cfg(target_os = "macos")]
             {
                 if let Some(icon) = tray_icon() {
-                    tray_builder = tray_builder.icon(icon).icon_as_template(true);
+                    tray_builder = tray_builder.icon(icon);
                 } else if let Some(icon) = app.default_window_icon() {
                     log::warn!("Falling back to default window icon for tray");
                     tray_builder = tray_builder.icon(icon.clone());
