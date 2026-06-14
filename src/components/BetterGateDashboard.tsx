@@ -3,6 +3,7 @@
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -21,6 +22,7 @@ import {
   Users2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import { Button } from "@/components/ui/button";
 import { SettingsPage } from "@/components/settings/SettingsPage";
@@ -68,6 +70,8 @@ import {
 const SELECTED_WORKSPACE_KEY = "better-gate:desktop-dashboard-workspace";
 const BETTER_GATE_DOCS_URL = "https://docs.better-gate.com";
 const BILLING_UNITS_PER_USD = 10_000;
+const SUMMARY_REFRESH_INTERVAL_MS = 15_000;
+const SUMMARY_REFRESH_MIN_GAP_MS = 5_000;
 
 type ToolOption = {
   id: AppId;
@@ -703,6 +707,7 @@ export function BetterGateDashboard() {
   const [activeApiKeyId, setActiveApiKeyId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const lastSummaryRefreshAtRef = useRef(0);
 
   const selectedWorkspace = useMemo(
     () =>
@@ -810,6 +815,34 @@ export function BetterGateDashboard() {
     }
   }, []);
 
+  const refreshSummary = useCallback(
+    async (options: { force?: boolean } = {}) => {
+      if (!selectedWorkspaceId) {
+        setSummary(null);
+        return;
+      }
+
+      if (
+        !workspaces.length ||
+        !workspaces.some((workspace) => workspace.id === selectedWorkspaceId)
+      ) {
+        return;
+      }
+
+      const now = Date.now();
+      if (
+        !options.force &&
+        now - lastSummaryRefreshAtRef.current < SUMMARY_REFRESH_MIN_GAP_MS
+      ) {
+        return;
+      }
+
+      lastSummaryRefreshAtRef.current = now;
+      await loadSummary(selectedWorkspaceId);
+    },
+    [loadSummary, selectedWorkspaceId, workspaces],
+  );
+
   const loadWorkspaces = useCallback(async () => {
     setIsLoadingWorkspaces(true);
     setErrorMessage(null);
@@ -881,8 +914,98 @@ export function BetterGateDashboard() {
     }
 
     localStorage.setItem(SELECTED_WORKSPACE_KEY, selectedWorkspaceId);
-    void loadSummary(selectedWorkspaceId);
-  }, [loadSummary, selectedWorkspaceId, workspaces]);
+    void refreshSummary({ force: true });
+  }, [refreshSummary, selectedWorkspaceId, workspaces]);
+
+  useEffect(() => {
+    if (isPreview || !selectedWorkspaceId) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void refreshSummary();
+    }, SUMMARY_REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [isPreview, refreshSummary, selectedWorkspaceId]);
+
+  useEffect(() => {
+    if (isPreview) {
+      return;
+    }
+
+    let disposed = false;
+    let unlistenFocus: (() => void) | undefined;
+    const refreshVisibleSummary = () => {
+      void refreshSummary();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshVisibleSummary();
+      }
+    };
+
+    window.addEventListener("focus", refreshVisibleSummary);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    void getCurrentWindow()
+      .onFocusChanged(({ payload: focused }) => {
+        if (focused) {
+          refreshVisibleSummary();
+        }
+      })
+      .then((unlisten) => {
+        if (disposed) {
+          unlisten();
+        } else {
+          unlistenFocus = unlisten;
+        }
+      })
+      .catch((error) => {
+        console.warn(
+          "[BetterGateDashboard] failed to listen window focus",
+          error,
+        );
+      });
+
+    return () => {
+      disposed = true;
+      unlistenFocus?.();
+      window.removeEventListener("focus", refreshVisibleSummary);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isPreview, refreshSummary]);
+
+  useEffect(() => {
+    if (isPreview) {
+      return;
+    }
+
+    let disposed = false;
+    let unlisten: UnlistenFn | undefined;
+
+    void listen("usage-log-recorded", () => {
+      void refreshSummary();
+    })
+      .then((off) => {
+        if (disposed) {
+          off();
+        } else {
+          unlisten = off;
+        }
+      })
+      .catch((error) => {
+        console.warn(
+          "[BetterGateDashboard] failed to listen usage events",
+          error,
+        );
+      });
+
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [isPreview, refreshSummary]);
 
   useEffect(() => {
     if (isBetterGateDesktopPreview()) {
@@ -910,10 +1033,10 @@ export function BetterGateDashboard() {
       loadWorkspaces(),
       loadToolStatuses(),
       selectedWorkspaceId
-        ? loadSummary(selectedWorkspaceId)
+        ? refreshSummary({ force: true })
         : Promise.resolve(),
     ]);
-  }, [loadSummary, loadToolStatuses, loadWorkspaces, selectedWorkspaceId]);
+  }, [loadToolStatuses, loadWorkspaces, refreshSummary, selectedWorkspaceId]);
 
   const handleOpenTool = useCallback((toolId: AppId) => {
     setIsSettingsOpen(false);
@@ -933,7 +1056,7 @@ export function BetterGateDashboard() {
     setActiveApiKeyId(null);
     void loadToolStatuses();
     if (selectedWorkspaceId) {
-      void loadSummary(selectedWorkspaceId);
+      void refreshSummary({ force: true });
     }
   };
 
