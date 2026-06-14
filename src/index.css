@@ -130,6 +130,10 @@
   display: flex;
 }
 
+.dashboard-titlebar-content {
+  padding-right: 82px;
+}
+
 body.is-mac .app-titlebar {
   justify-content: flex-start;
   padding-left: 14px;
@@ -146,6 +150,74 @@ body.is-mac .windows-window-controls {
 
 body.is-mac .bettergate-dashboard-brand {
   padding-left: 74px;
+}
+
+body.is-mac .dashboard-workspace-titlebar {
+  margin-left: 58px;
+}
+
+body.is-mac .dashboard-titlebar-content {
+  padding-right: 14px;
+}
+
+body.is-bettergate-dashboard-preview {
+  min-height: 100vh;
+  overflow: auto;
+  background: #e9e9e9;
+}
+
+body.is-bettergate-dashboard-preview #root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+body.is-bettergate-dashboard-preview .bettergate-client {
+  width: 460px !important;
+  height: 650px !important;
+  min-width: 460px;
+  max-width: 460px;
+  min-height: 650px;
+  max-height: 650px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.18);
+}
+
+@media (max-width: 600px) {
+  body.is-bettergate-dashboard-preview #root {
+    padding: 16px;
+  }
+
+  body.is-bettergate-dashboard-preview .bettergate-client {
+    transform: scale(0.88);
+  }
+}
+
+html.dark body.is-bettergate-dashboard-preview {
+  background: #0f0f10;
+}
+
+html.dark body.is-bettergate-dashboard-preview .bettergate-client {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 600px) {
+  [data-sonner-toaster][data-x-position="center"] {
+    left: 50% !important;
+    right: auto !important;
+    width: var(--width) !important;
+    transform: translateX(-50%) !important;
+  }
+
+  [data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
+    left: 0 !important;
+    right: auto !important;
+    width: var(--width) !important;
+  }
 }
 
 .bettergate-client {
@@ -350,10 +422,13 @@ body.is-mac .bettergate-dashboard-brand {
 
 .bettergate-client .bettergate-manual-form input:focus-visible,
 .bettergate-client .bettergate-manual-form textarea:focus-visible,
-.bettergate-client .bettergate-manual-form button[role="combobox"]:focus-visible {
+.bettergate-client
+  .bettergate-manual-form
+  button[role="combobox"]:focus-visible {
   outline: none;
   border-color: var(--bettergate-text-faint);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bettergate-text-faint) 18%, transparent);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--bettergate-text-faint) 18%, transparent);
 }
 
 .bettergate-client .bettergate-manual-form .rounded-md,
@@ -378,7 +453,11 @@ body.is-mac .bettergate-dashboard-brand {
   color: var(--bettergate-text-muted);
 }
 
-.bettergate-client .bettergate-manual-form .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+.bettergate-client
+  .bettergate-manual-form
+  .space-y-6
+  > :not([hidden])
+  ~ :not([hidden]) {
   margin-top: 18px;
 }
 

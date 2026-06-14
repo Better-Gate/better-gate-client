@@ -201,6 +201,30 @@ export function isBetterGateProvider(provider?: {
   );
 }
 
+export function getBetterGateProviderApiKeyId(
+  provider: Pick<Provider, "id" | "meta"> | null | undefined,
+  toolId?: AppId,
+) {
+  const boundApiKeyId = provider?.meta?.betterGate?.apiKeyId;
+  if (boundApiKeyId) {
+    return boundApiKeyId;
+  }
+
+  if (!provider?.id) {
+    return null;
+  }
+
+  if (toolId) {
+    const prefix = createProviderId(toolId, "");
+    return provider.id.startsWith(prefix)
+      ? provider.id.slice(prefix.length)
+      : null;
+  }
+
+  const legacyMatch = provider.id.match(/^better-gate-.+-(.+)$/);
+  return legacyMatch?.[1] ?? null;
+}
+
 export function isBetterGateProviderForContext(
   provider: (Pick<Provider, "id" | "icon" | "notes" | "meta">) | null | undefined,
   context: BetterGateProviderContext,

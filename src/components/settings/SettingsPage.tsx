@@ -604,7 +604,7 @@ export function SettingsPage({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col px-5 py-4">
+    <div className="flex h-full min-h-0 flex-col">
       {isBusy ? (
         <div className="flex flex-1 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />

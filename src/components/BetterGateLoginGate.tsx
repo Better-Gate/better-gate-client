@@ -25,6 +25,10 @@ import {
 type AuthState = "checking" | "signedOut" | "waiting" | "signedIn" | "error";
 
 const REPLAY_ONBOARDING_EVENT = "better-gate:replay-onboarding";
+const AUTH_WINDOW_SIZE = {
+  width: 460,
+  height: 650,
+};
 
 interface BetterGateLoginGateProps {
   children: React.ReactNode;
@@ -32,19 +36,24 @@ interface BetterGateLoginGateProps {
 
 async function configureLoginWindow() {
   const currentWindow = getCurrentWindow();
+  const authSize = new LogicalSize(
+    AUTH_WINDOW_SIZE.width,
+    AUTH_WINDOW_SIZE.height,
+  );
 
   await currentWindow.setDecorations(false);
+  await currentWindow.setSizeConstraints(null).catch(() => undefined);
   await currentWindow.unmaximize().catch(() => undefined);
   await currentWindow.setResizable(false);
   await currentWindow.setMinimizable(false).catch(() => undefined);
   await currentWindow.setMaximizable(false).catch(() => undefined);
   await currentWindow.setSizeConstraints({
-    minWidth: 430,
-    minHeight: 520,
-    maxWidth: 430,
-    maxHeight: 520,
+    minWidth: AUTH_WINDOW_SIZE.width,
+    minHeight: AUTH_WINDOW_SIZE.height,
+    maxWidth: AUTH_WINDOW_SIZE.width,
+    maxHeight: AUTH_WINDOW_SIZE.height,
   });
-  await currentWindow.setSize(new LogicalSize(430, 520));
+  await currentWindow.setSize(authSize);
   await currentWindow.center();
 }
 
@@ -55,14 +64,14 @@ function AuthCloseButton() {
 
   return (
     <div
-      className="fixed left-0 right-0 top-0 z-50 flex h-9 items-center justify-end px-2"
+      className="fixed left-0 right-0 top-0 z-50 flex h-11 items-center justify-end px-2"
       data-tauri-drag-region
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
       <button
         type="button"
         onClick={() => void handleClose()}
-        className="mac-window-controls absolute left-[14px] top-0 h-9 items-center"
+        className="mac-window-controls absolute left-[14px] top-0 h-11 items-center"
         aria-label="关闭"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       >
@@ -72,7 +81,7 @@ function AuthCloseButton() {
         variant="ghost"
         size="icon"
         onClick={() => void handleClose()}
-        className="windows-window-controls h-7 w-7 text-neutral-500 hover:bg-red-50 hover:text-red-500"
+        className="windows-window-controls h-8 w-8 text-neutral-500 hover:bg-red-50 hover:text-red-500"
         aria-label="关闭"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       >
@@ -275,24 +284,24 @@ export function BetterGateLoginGate({ children }: BetterGateLoginGateProps) {
     <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-white text-neutral-950">
       <AuthCloseButton />
 
-      <main className="flex w-[312px] flex-col items-center text-center">
+      <main className="flex w-full max-w-[330px] flex-col items-center px-2 text-center">
         <img
           src={betterGateIcon}
           alt="Better Gate"
-          className="mb-7 h-16 w-16"
+          className="mb-6 h-14 w-14"
           draggable={false}
         />
 
-        <h1 className="text-2xl font-semibold tracking-normal">
+        <h1 className="text-[22px] font-semibold leading-7 tracking-normal">
           欢迎使用 Better Gate
         </h1>
 
-        <p className="mt-3 text-sm leading-6 text-neutral-500">
+        <p className="mt-2.5 text-sm leading-6 text-neutral-500">
           连接 AI 模型，从这里开始
         </p>
 
         <Button
-          className="mt-8 h-11 w-full rounded-xl bg-neutral-950 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-800"
+          className="mt-7 h-11 w-full rounded-xl bg-neutral-950 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-800"
           onClick={handleLogin}
           disabled={isBusy}
         >

@@ -40,6 +40,10 @@ const BETTER_GATE_HOME_URL = "https://better-gate.com";
 const DEFAULT_CLAUDE_SONNET_MODEL = "claude-sonnet-4-6";
 const DEFAULT_CLAUDE_OPUS_MODEL = "claude-opus-4-8";
 const DEFAULT_CLAUDE_HAIKU_MODEL = "claude-haiku-4-5";
+const ONBOARDING_WINDOW_SIZE = {
+  width: 460,
+  height: 650,
+};
 
 type OnboardingStep = "workspace" | "tool" | "key" | "done";
 
@@ -59,22 +63,22 @@ type ToolOption = {
 
 const toolOptions: ToolOption[] = [
   {
+    id: "codex",
+    title: "Codex",
+    description: "用于 Codex CLI 和桌面端。",
+    restartName: "Codex",
+  },
+  {
     id: "claude",
-    title: "Claude Code",
-    description: "用于 Claude Code 终端开发流程。",
-    restartName: "Claude Code",
+    title: "Claude Code CLI",
+    description: "用于 Claude Code 命令行。",
+    restartName: "Claude Code CLI",
   },
   {
     id: "claude-desktop",
-    title: "Claude Desktop",
-    description: "用于 Claude 桌面端模型供应商配置。",
-    restartName: "Claude Desktop",
-  },
-  {
-    id: "codex",
-    title: "Codex",
-    description: "用于 Codex CLI 和 Codex 桌面端。",
-    restartName: "Codex",
+    title: "Claude Code Desktop",
+    description: "用于 Claude Code 桌面端。",
+    restartName: "Claude Code Desktop",
   },
   {
     id: "gemini",
@@ -108,19 +112,24 @@ function isKnownToolId(value: unknown): value is AppId {
 
 async function configureOnboardingWindow() {
   const currentWindow = getCurrentWindow();
+  const onboardingSize = new LogicalSize(
+    ONBOARDING_WINDOW_SIZE.width,
+    ONBOARDING_WINDOW_SIZE.height,
+  );
 
   await currentWindow.setDecorations(false);
+  await currentWindow.setSizeConstraints(null).catch(() => undefined);
   await currentWindow.unmaximize().catch(() => undefined);
   await currentWindow.setResizable(false);
   await currentWindow.setMinimizable(false).catch(() => undefined);
   await currentWindow.setMaximizable(false).catch(() => undefined);
   await currentWindow.setSizeConstraints({
-    minWidth: 720,
-    minHeight: 560,
-    maxWidth: 720,
-    maxHeight: 560,
+    minWidth: ONBOARDING_WINDOW_SIZE.width,
+    minHeight: ONBOARDING_WINDOW_SIZE.height,
+    maxWidth: ONBOARDING_WINDOW_SIZE.width,
+    maxHeight: ONBOARDING_WINDOW_SIZE.height,
   });
-  await currentWindow.setSize(new LogicalSize(720, 560));
+  await currentWindow.setSize(onboardingSize);
   await currentWindow.center();
 }
 
@@ -131,14 +140,14 @@ function OnboardingCloseButton() {
 
   return (
     <div
-      className="fixed left-0 right-0 top-0 z-50 flex h-9 items-center justify-end px-2"
+      className="fixed left-0 right-0 top-0 z-50 flex h-11 items-center justify-end px-2"
       data-tauri-drag-region
       style={{ WebkitAppRegion: "drag" } as CSSProperties}
     >
       <button
         type="button"
         onClick={() => void handleClose()}
-        className="mac-window-controls absolute left-[14px] top-0 h-9 items-center"
+        className="mac-window-controls absolute left-[14px] top-0 h-11 items-center"
         aria-label="关闭"
         style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
       >
@@ -148,7 +157,7 @@ function OnboardingCloseButton() {
         variant="ghost"
         size="icon"
         onClick={() => void handleClose()}
-        className="windows-window-controls h-7 w-7 text-neutral-500 hover:bg-red-50 hover:text-red-500"
+        className="windows-window-controls h-8 w-8 text-neutral-500 hover:bg-red-50 hover:text-red-500"
         aria-label="关闭"
         style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
       >
@@ -174,7 +183,9 @@ function getScopedStorageKey(
   return scope ? `${baseKey}:${encodeURIComponent(scope)}` : baseKey;
 }
 
-function getSavedOnboardingState(user?: BetterGateDesktopUser | null): SavedOnboardingState {
+function getSavedOnboardingState(
+  user?: BetterGateDesktopUser | null,
+): SavedOnboardingState {
   try {
     return JSON.parse(
       localStorage.getItem(getScopedStorageKey(ONBOARDING_STATE_KEY, user)) ||
@@ -375,13 +386,17 @@ export function createBetterGateProvider(input: {
   const providerName = input.apiKey.name || "Better Gate";
   const providerId = createProviderId(input.toolId, input.apiKey.id);
   const primaryModel = getBetterGateApiKeyDefaultModel(input.apiKey);
-  const usesLegacyClaudeFamily = input.apiKey.routeGroupModelFamily === "CLAUDE";
-  const sonnetModel =
-    usesLegacyClaudeFamily ? DEFAULT_CLAUDE_SONNET_MODEL : primaryModel;
-  const opusModel =
-    usesLegacyClaudeFamily ? DEFAULT_CLAUDE_OPUS_MODEL : primaryModel;
-  const haikuModel =
-    usesLegacyClaudeFamily ? DEFAULT_CLAUDE_HAIKU_MODEL : primaryModel;
+  const usesLegacyClaudeFamily =
+    input.apiKey.routeGroupModelFamily === "CLAUDE";
+  const sonnetModel = usesLegacyClaudeFamily
+    ? DEFAULT_CLAUDE_SONNET_MODEL
+    : primaryModel;
+  const opusModel = usesLegacyClaudeFamily
+    ? DEFAULT_CLAUDE_OPUS_MODEL
+    : primaryModel;
+  const haikuModel = usesLegacyClaudeFamily
+    ? DEFAULT_CLAUDE_HAIKU_MODEL
+    : primaryModel;
   const baseProvider: Omit<Provider, "settingsConfig"> = {
     id: providerId,
     name: providerName,
@@ -536,7 +551,9 @@ requires_openai_auth = true`,
   };
 }
 
-export function isBetterGateOnboardingDone(user?: BetterGateDesktopUser | null) {
+export function isBetterGateOnboardingDone(
+  user?: BetterGateDesktopUser | null,
+) {
   if (import.meta.env.DEV) {
     const params = new URLSearchParams(window.location.search);
 
@@ -567,7 +584,9 @@ export function isBetterGateOnboardingDone(user?: BetterGateDesktopUser | null) 
   );
 }
 
-export function resetBetterGateOnboardingState(user?: BetterGateDesktopUser | null) {
+export function resetBetterGateOnboardingState(
+  user?: BetterGateDesktopUser | null,
+) {
   localStorage.removeItem(ONBOARDING_DONE_KEY);
   localStorage.removeItem(ONBOARDING_STATE_KEY);
   localStorage.removeItem(getScopedStorageKey(ONBOARDING_DONE_KEY, user));
@@ -716,7 +735,9 @@ export function BetterGateOnboarding({
       const routeGroupDefaults = new Map(
         (result.routeGroups ?? []).map((group) => [
           group.key?.trim() || "standard",
-          normalizeBetterGateDefaultModel(group.defaultModel ?? group.modelFamily),
+          normalizeBetterGateDefaultModel(
+            group.defaultModel ?? group.modelFamily,
+          ),
         ]),
       );
       const nextApiKeys = sortBetterGateApiKeys(
@@ -816,7 +837,9 @@ export function BetterGateOnboarding({
       await providersApi.switch(provider.id, selectedToolId);
 
       setStep("done");
-      toast.success(`已导入到 ${getToolOption(selectedToolId).title}`, {
+      const selectedTool = getToolOption(selectedToolId);
+      toast.success(`已接入 ${selectedTool.title}`, {
+        description: `请重启 ${selectedTool.restartName} 后使用。`,
         closeButton: true,
       });
     },
@@ -846,12 +869,14 @@ export function BetterGateOnboarding({
       const createdApiKey = {
         ...result.apiKey,
         routeGroupDefaultModel: normalizeBetterGateDefaultModel(
-          result.apiKey.routeGroupDefaultModel ?? result.apiKey.routeGroupModelFamily,
+          result.apiKey.routeGroupDefaultModel ??
+            result.apiKey.routeGroupModelFamily,
         ),
         routeGroupModelFamily:
           result.apiKey.routeGroupModelFamily ??
           normalizeBetterGateModelFamily(
-            result.apiKey.routeGroupDefaultModel ?? result.apiKey.routeGroupModelFamily,
+            result.apiKey.routeGroupDefaultModel ??
+              result.apiKey.routeGroupModelFamily,
           ),
       };
       const nextApiKeys = sortBetterGateApiKeys([createdApiKey, ...apiKeys]);
@@ -956,7 +981,10 @@ export function BetterGateOnboarding({
       );
 
     if (!shouldSkipDonePersistence) {
-      localStorage.setItem(getScopedStorageKey(ONBOARDING_DONE_KEY, user), "true");
+      localStorage.setItem(
+        getScopedStorageKey(ONBOARDING_DONE_KEY, user),
+        "true",
+      );
     }
 
     onComplete();
@@ -966,13 +994,13 @@ export function BetterGateOnboarding({
     <div className="h-screen w-screen overflow-hidden bg-white text-neutral-950">
       <OnboardingCloseButton />
 
-      <main className="mx-auto flex h-full w-[560px] flex-col px-2 pb-8 pt-14">
+      <main className="mx-auto flex h-full w-full max-w-[420px] flex-col px-5 pb-5 pt-12">
         {step === "done" ? (
           <div className="flex flex-1 flex-col justify-center">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
               <Check className="h-6 w-6" />
             </div>
-            <h1 className="mt-5 text-2xl font-semibold leading-tight tracking-normal">
+            <h1 className="mt-5 text-[22px] font-semibold leading-7 tracking-normal">
               接入完成
             </h1>
             <p className="mt-2 text-sm leading-6 text-neutral-500">
@@ -1002,14 +1030,14 @@ export function BetterGateOnboarding({
 
         {step === "workspace" ? (
           <>
-            <div className="flex h-10 items-center justify-between">
+            <div className="flex h-9 items-center justify-between">
               <span className="text-xs font-medium text-neutral-400">
                 1 / 3
               </span>
             </div>
 
-            <div className="mt-3 px-3">
-              <h1 className="text-2xl font-semibold leading-tight tracking-normal">
+            <div className="mt-2 px-1">
+              <h1 className="text-[22px] font-semibold leading-7 tracking-normal">
                 选择工作区
               </h1>
               <p className="mt-1 text-sm text-neutral-500">
@@ -1017,7 +1045,7 @@ export function BetterGateOnboarding({
               </p>
             </div>
 
-            <section className="mt-4 min-h-0 flex-1 overflow-y-auto">
+            <section className="mt-5 min-h-0 flex-1 overflow-y-auto">
               {isLoadingWorkspaces ? (
                 <div className="flex h-full items-center justify-center">
                   <Loader2 className="h-5 w-5 animate-spin text-neutral-500" />
@@ -1034,50 +1062,46 @@ export function BetterGateOnboarding({
                         <div className="px-3 text-[11px] font-medium text-neutral-400">
                           {label as string}
                         </div>
-                        {(sectionWorkspaces as BetterGateDesktopWorkspace[]).map(
-                          (workspace) => {
-                            const selected =
-                              selectedWorkspaceId === workspace.id;
+                        {(
+                          sectionWorkspaces as BetterGateDesktopWorkspace[]
+                        ).map((workspace) => {
+                          const selected = selectedWorkspaceId === workspace.id;
 
-                            return (
-                              <button
-                                key={workspace.id}
-                                type="button"
-                                onClick={() =>
-                                  handleWorkspaceSelect(workspace.id)
-                                }
-                                className={cn(
-                                  "flex h-[60px] w-full items-center gap-3 rounded-xl px-3 text-left transition",
-                                  selected
-                                    ? "bg-neutral-50"
-                                    : "hover:bg-neutral-50",
-                                )}
-                              >
-                                <OnboardingWorkspaceAvatar
-                                  workspace={workspace}
-                                  user={user}
-                                  className="h-9 w-9"
-                                />
-                                <span className="min-w-0 flex-1">
-                                  <span className="block truncate text-sm font-semibold text-neutral-950">
-                                    {getBetterGateWorkspaceTitle(
-                                      workspace,
-                                      user,
-                                    )}
-                                  </span>
-                                  <span className="mt-0.5 block truncate text-xs text-neutral-400">
-                                    {formatBetterGateBalance(
-                                      workspace.availableBalanceCents,
-                                    )}
-                                  </span>
+                          return (
+                            <button
+                              key={workspace.id}
+                              type="button"
+                              onClick={() =>
+                                handleWorkspaceSelect(workspace.id)
+                              }
+                              className={cn(
+                                "flex h-[56px] w-full items-center gap-3 rounded-xl px-3 text-left transition",
+                                selected
+                                  ? "bg-neutral-50"
+                                  : "hover:bg-neutral-50",
+                              )}
+                            >
+                              <OnboardingWorkspaceAvatar
+                                workspace={workspace}
+                                user={user}
+                                className="h-8 w-8"
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm font-semibold text-neutral-950">
+                                  {getBetterGateWorkspaceTitle(workspace, user)}
                                 </span>
-                                {selected ? (
-                                  <Check className="h-4 w-4 shrink-0 text-neutral-950" />
-                                ) : null}
-                              </button>
-                            );
-                          },
-                        )}
+                                <span className="mt-0.5 block truncate text-xs text-neutral-400">
+                                  {formatBetterGateBalance(
+                                    workspace.availableBalanceCents,
+                                  )}
+                                </span>
+                              </span>
+                              {selected ? (
+                                <Check className="h-4 w-4 shrink-0 text-neutral-950" />
+                              ) : null}
+                            </button>
+                          );
+                        })}
                       </div>
                     ) : null,
                   )}
@@ -1096,7 +1120,7 @@ export function BetterGateOnboarding({
 
         {step === "tool" ? (
           <>
-            <div className="flex h-10 items-center justify-between">
+            <div className="flex h-9 items-center justify-between">
               <button
                 type="button"
                 onClick={handleBack}
@@ -1111,8 +1135,8 @@ export function BetterGateOnboarding({
               </span>
             </div>
 
-            <div className="mt-3 px-3">
-              <h1 className="text-2xl font-semibold leading-tight tracking-normal">
+            <div className="mt-2 px-1">
+              <h1 className="text-[22px] font-semibold leading-7 tracking-normal">
                 选择工具
               </h1>
               <p className="mt-1 truncate text-sm text-neutral-500">
@@ -1122,7 +1146,7 @@ export function BetterGateOnboarding({
               </p>
             </div>
 
-            <section className="mt-4 min-h-0 flex-1 overflow-y-auto">
+            <section className="mt-5 min-h-0 flex-1 overflow-y-auto">
               <div className="space-y-1">
                 {toolOptions.map((tool) => {
                   const config = APP_ICON_MAP[tool.id];
@@ -1134,13 +1158,13 @@ export function BetterGateOnboarding({
                       type="button"
                       onClick={() => handleToolSelect(tool.id)}
                       className={cn(
-                        "flex h-[60px] w-full items-center gap-3 rounded-xl px-3 text-left transition",
+                        "flex h-[56px] w-full items-center gap-3 rounded-xl px-3 text-left transition",
                         selected ? "bg-neutral-50" : "hover:bg-neutral-50",
                       )}
                     >
                       <span
                         className={cn(
-                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700",
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700",
                         )}
                       >
                         {config.icon}
@@ -1166,7 +1190,7 @@ export function BetterGateOnboarding({
 
         {step === "key" ? (
           <>
-            <div className="flex h-10 items-center justify-between">
+            <div className="flex h-9 items-center justify-between">
               <button
                 type="button"
                 onClick={handleBack}
@@ -1195,8 +1219,8 @@ export function BetterGateOnboarding({
               </button>
             </div>
 
-            <div className="mt-3 flex h-[60px] items-center gap-3 rounded-xl px-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
+            <div className="mt-3 flex h-[56px] items-center gap-3 rounded-xl px-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
                 {APP_ICON_MAP[selectedTool.id].icon}
               </span>
               <div className="min-w-0 flex-1">
@@ -1211,7 +1235,7 @@ export function BetterGateOnboarding({
               </div>
             </div>
 
-            <section className="mt-2 min-h-0 flex-1 overflow-y-auto">
+            <section className="mt-3 min-h-0 flex-1 overflow-y-auto">
               <div className="px-3 pb-1 pt-3 text-xs font-medium text-neutral-400">
                 API Key
               </div>
@@ -1233,11 +1257,11 @@ export function BetterGateOnboarding({
                         type="button"
                         onClick={() => setSelectedApiKeyId(apiKey.id)}
                         className={cn(
-                          "flex h-[60px] w-full items-center gap-3 rounded-xl px-3 text-left transition",
+                          "flex h-[56px] w-full items-center gap-3 rounded-xl px-3 text-left transition",
                           selected ? "bg-neutral-50" : "hover:bg-neutral-50",
                         )}
                       >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500">
                           <KeyRound className="h-4 w-4" />
                         </span>
                         <span className="min-w-0 flex-1">
@@ -1268,8 +1292,8 @@ export function BetterGateOnboarding({
                     );
                   })
                 ) : (
-                  <div className="flex h-[60px] items-center gap-3 rounded-xl px-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500">
+                  <div className="flex h-[56px] items-center gap-3 rounded-xl px-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500">
                       <KeyRound className="h-4 w-4" />
                     </span>
                     <span className="min-w-0 flex-1">
@@ -1302,7 +1326,7 @@ export function BetterGateOnboarding({
             {errorMessage}
           </div>
         ) : (
-          <div className="mt-3 h-9" />
+          <div className="mt-3 h-8" />
         )}
 
         <div className="mt-auto flex items-center justify-between">

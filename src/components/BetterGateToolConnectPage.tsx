@@ -1,10 +1,9 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   ArrowLeft,
   Check,
   Clipboard,
-  FileText,
   KeyRound,
   Loader2,
   Plus,
@@ -39,9 +38,7 @@ import { GeminiFormFields } from "@/components/providers/forms/GeminiFormFields"
 import { OpenCodeFormFields } from "@/components/providers/forms/OpenCodeFormFields";
 import { OpenClawFormFields } from "@/components/providers/forms/OpenClawFormFields";
 import { HermesFormFields } from "@/components/providers/forms/HermesFormFields";
-import {
-  type ClaudeModelEnvField,
-} from "@/components/providers/forms/hooks/useModelState";
+import { type ClaudeModelEnvField } from "@/components/providers/forms/hooks/useModelState";
 import { opencodeNpmPackages } from "@/config/opencodeProviderPresets";
 import { openclawApiProtocols } from "@/config/openclawProviderPresets";
 import {
@@ -54,8 +51,10 @@ import {
   createBetterGateProvider,
   getBetterGateApiKeyStatus,
   getBetterGateDefaultKeyName,
+  getBetterGateProviderApiKeyId,
   getBetterGateWorkspaceTitle,
   isBetterGateApiKeyDirectlyImportable,
+  isBetterGateProvider,
   isBetterGateProviderForContext,
   normalizeBetterGateDefaultModel,
   normalizeBetterGateModelFamily,
@@ -153,6 +152,8 @@ interface BetterGateToolConnectPageProps {
   selectedWorkspace: BetterGateDesktopWorkspace | null;
   selectedWorkspaceId: string | null;
   isLoadingWorkspaces: boolean;
+  initialApiKeyId?: string | null;
+  openConfigForApiKeyId?: string | null;
   onBack: () => void;
   onComplete: (status?: ToolConnectStatus) => void;
 }
@@ -409,7 +410,11 @@ function extractCodexProviderIdFromSettings(settings: Record<string, unknown>) {
   );
   const providerId = match?.[2]?.trim();
 
-  if (!providerId || providerId === "openai" || !isValidCodexProviderId(providerId)) {
+  if (
+    !providerId ||
+    providerId === "openai" ||
+    !isValidCodexProviderId(providerId)
+  ) {
     return null;
   }
 
@@ -469,7 +474,11 @@ function createManualConfigDraft(input: {
     apiKeyField: "ANTHROPIC_AUTH_TOKEN",
     claudeDesktopMode: "direct",
     opencodeNpm: DEFAULT_OPENCODE_NPM,
-    opencodeModels: JSON.stringify(createOpenCodeModels(primaryModel, sonnetModel), null, 2),
+    opencodeModels: JSON.stringify(
+      createOpenCodeModels(primaryModel, sonnetModel),
+      null,
+      2,
+    ),
     opencodeExtraOptions: JSON.stringify({ setCacheKey: true }, null, 2),
     apiType: "openai-completions",
     openclawModels: JSON.stringify(openModels, null, 2),
@@ -480,7 +489,13 @@ function createManualConfigDraft(input: {
     geminiConfig: "{}",
     codexProviderId: "bettergate",
     codexModelCatalog: JSON.stringify(
-      [{ model: primaryModel, displayName: modelDisplayName(primaryModel), contextWindow: "" }],
+      [
+        {
+          model: primaryModel,
+          displayName: modelDisplayName(primaryModel),
+          contextWindow: "",
+        },
+      ],
       null,
       2,
     ),
@@ -895,9 +910,7 @@ function buildEditableManualConfig(input: {
   );
   const geminiConfig =
     parseJsonRecord(input.draft.geminiConfig, "Gemini 扩展配置", false) ?? {};
-  const codexProviderId = normalizeCodexProviderId(
-    input.draft.codexProviderId,
-  );
+  const codexProviderId = normalizeCodexProviderId(input.draft.codexProviderId);
   const codexModelCatalog =
     parseJsonArray(input.draft.codexModelCatalog, "Codex 模型目录", false) ??
     [];
@@ -933,7 +946,8 @@ requires_openai_auth = true`,
           ? [
               {
                 title: "模型目录",
-                description: "对应原 Codex 新增供应商里的模型目录字段。",
+                description:
+                  "由上方模型映射生成，供 Codex 的 /model 菜单读取。",
                 content: JSON.stringify(
                   { modelCatalog: { models: codexModelCatalog } },
                   null,
@@ -1178,9 +1192,7 @@ function createBetterGateProviderFromManualDraft(input: {
   );
   const geminiConfig =
     parseJsonRecord(input.draft.geminiConfig, "Gemini 扩展配置") ?? {};
-  const codexProviderId = normalizeCodexProviderId(
-    input.draft.codexProviderId,
-  );
+  const codexProviderId = normalizeCodexProviderId(input.draft.codexProviderId);
   const codexModelCatalog =
     parseJsonArray(input.draft.codexModelCatalog, "Codex 模型目录") ?? [];
   const provider = createBetterGateProvider({
@@ -1196,10 +1208,7 @@ function createBetterGateProviderFromManualDraft(input: {
     input.toolId === "hermes";
   const providerKey = input.draft.providerKey.trim() || provider.id;
 
-  if (
-    usesProviderKey &&
-    !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(providerKey)
-  ) {
+  if (usesProviderKey && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(providerKey)) {
     throw new Error("Provider Key 只能包含小写字母、数字和连字符");
   }
 
@@ -1377,6 +1386,8 @@ export function BetterGateToolConnectPage({
   selectedWorkspace,
   selectedWorkspaceId,
   isLoadingWorkspaces,
+  initialApiKeyId,
+  openConfigForApiKeyId,
   onBack,
   onComplete,
 }: BetterGateToolConnectPageProps) {
@@ -1403,6 +1414,7 @@ export function BetterGateToolConnectPage({
   const [manualErrorMessage, setManualErrorMessage] = useState<string | null>(
     null,
   );
+  const openedConfigApiKeyIdRef = useRef<string | null>(null);
   const [createMode, setCreateMode] = useState<CreateMode>("select");
   const [draftKeyName, setDraftKeyName] = useState(
     getBetterGateDefaultKeyName(tool.id),
@@ -1449,6 +1461,10 @@ export function BetterGateToolConnectPage({
           providersApi.getCurrent(tool.id),
         ]);
         const currentProvider = providers[currentProviderId] ?? null;
+        const currentApiKeyId = getBetterGateProviderApiKeyId(
+          currentProvider,
+          tool.id,
+        );
         const importedIds = new Set<string>();
 
         for (const apiKey of keys) {
@@ -1457,7 +1473,9 @@ export function BetterGateToolConnectPage({
               user,
               workspace: selectedWorkspace,
               apiKeyId: apiKey.id,
-            })
+            }) ||
+            (isBetterGateProvider(currentProvider) &&
+              currentApiKeyId === apiKey.id)
           ) {
             importedIds.add(apiKey.id);
             break;
@@ -1475,73 +1493,78 @@ export function BetterGateToolConnectPage({
     [selectedWorkspace, tool.id, user],
   );
 
-  const loadApiKeys = useCallback(async (workspaceId: string) => {
-    setIsLoadingApiKeys(true);
-    setErrorMessage(null);
+  const loadApiKeys = useCallback(
+    async (workspaceId: string) => {
+      setIsLoadingApiKeys(true);
+      setErrorMessage(null);
 
-    try {
-      const result = await listBetterGateDesktopApiKeys(workspaceId);
-      const nextRouteGroups = result.routeGroups ?? [];
-      const routeGroupDefaults = new Map(
-        nextRouteGroups.map((group) => [
-          routeGroupKey(group.key),
-          normalizeBetterGateDefaultModel(group.defaultModel ?? group.modelFamily),
-        ]),
-      );
-      const nextApiKeys = sortBetterGateApiKeys(
-        result.apiKeys.map((apiKey) => {
-          const fallbackDefaultModel = routeGroupDefaults.get(
-            routeGroupKey(apiKey.routeGroup),
-          );
-          const routeGroupDefaultModel = normalizeBetterGateDefaultModel(
-            apiKey.routeGroupDefaultModel ??
-              apiKey.routeGroupModelFamily ??
-              fallbackDefaultModel,
-          );
-
-          return {
-            ...apiKey,
-            routeGroupDefaultModel,
-            routeGroupModelFamily:
-              apiKey.routeGroupModelFamily ??
-              normalizeBetterGateModelFamily(routeGroupDefaultModel),
-          };
-        }),
-      );
-
-      setApiKeys(nextApiKeys);
-      setRouteGroups(nextRouteGroups);
-      setSelectedApiKeyId((current) => {
-        if (nextApiKeys.some((apiKey) => apiKey.id === current)) {
-          return current;
-        }
-
-        return (
-          nextApiKeys.find((apiKey) =>
-            isBetterGateApiKeyDirectlyImportable(apiKey),
-          )?.id ??
-          nextApiKeys[0]?.id ??
-          null
+      try {
+        const result = await listBetterGateDesktopApiKeys(workspaceId);
+        const nextRouteGroups = result.routeGroups ?? [];
+        const routeGroupDefaults = new Map(
+          nextRouteGroups.map((group) => [
+            routeGroupKey(group.key),
+            normalizeBetterGateDefaultModel(
+              group.defaultModel ?? group.modelFamily,
+            ),
+          ]),
         );
-      });
-      setDraftRouteGroup((current) => {
-        if (nextRouteGroups.some((group) => group.key === current)) {
-          return current;
-        }
+        const nextApiKeys = sortBetterGateApiKeys(
+          result.apiKeys.map((apiKey) => {
+            const fallbackDefaultModel = routeGroupDefaults.get(
+              routeGroupKey(apiKey.routeGroup),
+            );
+            const routeGroupDefaultModel = normalizeBetterGateDefaultModel(
+              apiKey.routeGroupDefaultModel ??
+                apiKey.routeGroupModelFamily ??
+                fallbackDefaultModel,
+            );
 
-        return getDefaultRouteGroupKey(nextRouteGroups);
-      });
-      void syncImportedApiKeys(nextApiKeys);
-    } catch (error) {
-      console.error(
-        "[BetterGateToolConnectPage] failed to load api keys",
-        error,
-      );
-      setErrorMessage("无法读取 API Key，请稍后重试。");
-    } finally {
-      setIsLoadingApiKeys(false);
-    }
-  }, [syncImportedApiKeys]);
+            return {
+              ...apiKey,
+              routeGroupDefaultModel,
+              routeGroupModelFamily:
+                apiKey.routeGroupModelFamily ??
+                normalizeBetterGateModelFamily(routeGroupDefaultModel),
+            };
+          }),
+        );
+
+        setApiKeys(nextApiKeys);
+        setRouteGroups(nextRouteGroups);
+        setSelectedApiKeyId((current) => {
+          if (nextApiKeys.some((apiKey) => apiKey.id === current)) {
+            return current;
+          }
+
+          return (
+            nextApiKeys.find((apiKey) =>
+              isBetterGateApiKeyDirectlyImportable(apiKey),
+            )?.id ??
+            nextApiKeys[0]?.id ??
+            null
+          );
+        });
+        setDraftRouteGroup((current) => {
+          if (nextRouteGroups.some((group) => group.key === current)) {
+            return current;
+          }
+
+          return getDefaultRouteGroupKey(nextRouteGroups);
+        });
+        void syncImportedApiKeys(nextApiKeys);
+      } catch (error) {
+        console.error(
+          "[BetterGateToolConnectPage] failed to load api keys",
+          error,
+        );
+        setErrorMessage("无法读取 API Key，请稍后重试。");
+      } finally {
+        setIsLoadingApiKeys(false);
+      }
+    },
+    [syncImportedApiKeys],
+  );
 
   useEffect(() => {
     setDraftKeyName(getBetterGateDefaultKeyName(tool.id));
@@ -1561,6 +1584,16 @@ export function BetterGateToolConnectPage({
 
     void loadApiKeys(selectedWorkspaceId);
   }, [loadApiKeys, selectedWorkspace, selectedWorkspaceId]);
+
+  useEffect(() => {
+    if (!initialApiKeyId) {
+      return;
+    }
+
+    if (apiKeys.some((apiKey) => apiKey.id === initialApiKeyId)) {
+      setSelectedApiKeyId(initialApiKeyId);
+    }
+  }, [apiKeys, initialApiKeyId]);
 
   const openCreateDialog = (mode: CreateMode) => {
     setCreateMode(mode);
@@ -1591,7 +1624,10 @@ export function BetterGateToolConnectPage({
     await providersApi.switch(provider.id, tool.id);
     setImportedApiKeyIds(new Set([apiKey.id]));
     setSelectedApiKeyId(apiKey.id);
-    toast.success(`已接入 ${tool.title}`, { closeButton: true });
+    toast.success(`已接入 ${tool.title}`, {
+      description: `请重启 ${tool.title} 后使用。`,
+      closeButton: true,
+    });
     onComplete({ configured: true, name: apiKey.name || "Better Gate Key" });
   };
 
@@ -1702,89 +1738,126 @@ export function BetterGateToolConnectPage({
     }
   };
 
-  const handleOpenManualConfig = async () => {
-    if (!selectedWorkspace) {
-      setErrorMessage("请先选择工作区。");
-      return;
-    }
-
-    if (!selectedApiKey) {
-      if (canCreateApiKey) {
-        openCreateDialog("select");
-      } else {
-        setErrorMessage("请先选择一个可用的 API Key。");
+  const handleOpenManualConfig = useCallback(
+    async (targetApiKey = selectedApiKey) => {
+      if (!selectedWorkspace) {
+        setErrorMessage("请先选择工作区。");
+        return;
       }
-      return;
-    }
 
-    if (!isBetterGateApiKeyDirectlyImportable(selectedApiKey)) {
-      setErrorMessage(
-        "这个 Key 暂时没有保存完整密钥，请创建新的 Key 后再自定义配置。",
-      );
-      return;
-    }
+      if (!targetApiKey) {
+        if (canCreateApiKey) {
+          openCreateDialog("select");
+        } else {
+          setErrorMessage("请先选择一个可用的 API Key。");
+        }
+        return;
+      }
 
-    setIsManualDialogOpen(true);
-    setIsLoadingManualSecret(true);
-    setManualSecret(null);
-    setManualDraft(null);
-    setManualErrorMessage(null);
+      setSelectedApiKeyId(targetApiKey.id);
 
-    try {
-      const result = await revealBetterGateDesktopApiKey({
-        workspaceId: selectedWorkspace.id,
-        apiKeyId: selectedApiKey.id,
-      });
-
-      if (!result.secret) {
-        setManualErrorMessage(
-          "无法读取完整 API Key，请创建新的 Key 后再自定义配置。",
+      if (!isBetterGateApiKeyDirectlyImportable(targetApiKey)) {
+        setErrorMessage(
+          "这个 Key 暂时没有保存完整密钥，请创建新的 Key 后再自定义配置。",
         );
         return;
       }
 
-      let draft = createManualConfigDraft({
-          toolId: tool.id,
-          apiKeyId: selectedApiKey.id,
-          keyName: selectedApiKey.name,
-          secret: result.secret,
-          defaultModel:
-            selectedApiKey.routeGroupDefaultModel ??
-            selectedApiKey.routeGroupModelFamily,
+      setIsManualDialogOpen(true);
+      setIsLoadingManualSecret(true);
+      setManualSecret(null);
+      setManualDraft(null);
+      setManualErrorMessage(null);
+
+      try {
+        const result = await revealBetterGateDesktopApiKey({
+          workspaceId: selectedWorkspace.id,
+          apiKeyId: targetApiKey.id,
         });
 
-      if (tool.id === "codex") {
-        try {
-          const liveSettings = await providersApi.readLiveSettings("codex");
-          const existingProviderId =
-            extractCodexProviderIdFromSettings(liveSettings);
-
-          if (existingProviderId) {
-            draft = {
-              ...draft,
-              codexProviderId: existingProviderId,
-            };
-          }
-        } catch (error) {
-          console.warn(
-            "[BetterGateToolConnectPage] failed to read Codex provider id",
-            error,
+        if (!result.secret) {
+          setManualErrorMessage(
+            "无法读取完整 API Key，请创建新的 Key 后再自定义配置。",
           );
+          return;
         }
-      }
 
-      setManualSecret(result.secret);
-      setManualDraft(draft);
-    } catch (error) {
-      console.error(
-        "[BetterGateToolConnectPage] failed to reveal manual api key",
-        error,
-      );
-      setManualErrorMessage("读取 API Key 失败，请稍后重试。");
-    } finally {
-      setIsLoadingManualSecret(false);
+        let draft = createManualConfigDraft({
+          toolId: tool.id,
+          apiKeyId: targetApiKey.id,
+          keyName: targetApiKey.name,
+          secret: result.secret,
+          defaultModel:
+            targetApiKey.routeGroupDefaultModel ??
+            targetApiKey.routeGroupModelFamily,
+        });
+
+        if (tool.id === "codex") {
+          try {
+            const liveSettings = await providersApi.readLiveSettings("codex");
+            const existingProviderId =
+              extractCodexProviderIdFromSettings(liveSettings);
+
+            if (existingProviderId) {
+              draft = {
+                ...draft,
+                codexProviderId: existingProviderId,
+              };
+            }
+          } catch (error) {
+            console.warn(
+              "[BetterGateToolConnectPage] failed to read Codex provider id",
+              error,
+            );
+          }
+        }
+
+        setManualSecret(result.secret);
+        setManualDraft(draft);
+      } catch (error) {
+        console.error(
+          "[BetterGateToolConnectPage] failed to reveal manual api key",
+          error,
+        );
+        setManualErrorMessage("读取 API Key 失败，请稍后重试。");
+      } finally {
+        setIsLoadingManualSecret(false);
+      }
+    },
+    [
+      canCreateApiKey,
+      openCreateDialog,
+      selectedApiKey,
+      selectedWorkspace,
+      tool.id,
+    ],
+  );
+
+  useEffect(() => {
+    if (
+      !openConfigForApiKeyId ||
+      openedConfigApiKeyIdRef.current === openConfigForApiKeyId ||
+      isLoadingApiKeys
+    ) {
+      return;
     }
-  };
+
+    const apiKey = apiKeys.find(
+      (candidate) => candidate.id === openConfigForApiKeyId,
+    );
+
+    if (!apiKey) {
+      return;
+    }
+
+    openedConfigApiKeyIdRef.current = openConfigForApiKeyId;
+    void handleOpenManualConfig(apiKey);
+  }, [
+    apiKeys,
+    handleOpenManualConfig,
+    isLoadingApiKeys,
+    openConfigForApiKeyId,
+  ]);
 
   const updateManualDraft = (key: keyof ManualConfigDraft, value: string) => {
     setManualDraft((current) =>
@@ -1801,8 +1874,9 @@ export function BetterGateToolConnectPage({
     }
 
     return (
-      (parseJsonRecord(manualDraft[key], String(key), false) as T | undefined) ??
-      fallback
+      (parseJsonRecord(manualDraft[key], String(key), false) as
+        | T
+        | undefined) ?? fallback
     );
   };
 
@@ -1825,16 +1899,17 @@ export function BetterGateToolConnectPage({
     field: ClaudeModelEnvField,
     value: string,
   ) => {
-    const fieldMap: Partial<Record<ClaudeModelEnvField, keyof ManualConfigDraft>> =
-      {
-        ANTHROPIC_MODEL: "fallbackModel",
-        ANTHROPIC_DEFAULT_SONNET_MODEL: "sonnetModel",
-        ANTHROPIC_DEFAULT_SONNET_MODEL_NAME: "sonnetDisplayName",
-        ANTHROPIC_DEFAULT_OPUS_MODEL: "opusModel",
-        ANTHROPIC_DEFAULT_OPUS_MODEL_NAME: "opusDisplayName",
-        ANTHROPIC_DEFAULT_HAIKU_MODEL: "haikuModel",
-        ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME: "haikuDisplayName",
-      };
+    const fieldMap: Partial<
+      Record<ClaudeModelEnvField, keyof ManualConfigDraft>
+    > = {
+      ANTHROPIC_MODEL: "fallbackModel",
+      ANTHROPIC_DEFAULT_SONNET_MODEL: "sonnetModel",
+      ANTHROPIC_DEFAULT_SONNET_MODEL_NAME: "sonnetDisplayName",
+      ANTHROPIC_DEFAULT_OPUS_MODEL: "opusModel",
+      ANTHROPIC_DEFAULT_OPUS_MODEL_NAME: "opusDisplayName",
+      ANTHROPIC_DEFAULT_HAIKU_MODEL: "haikuModel",
+      ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME: "haikuDisplayName",
+    };
     const draftKey = fieldMap[field];
 
     if (draftKey) {
@@ -1885,8 +1960,7 @@ export function BetterGateToolConnectPage({
       return null;
     }
 
-    const mode =
-      manualDraft.claudeDesktopMode === "proxy" ? "proxy" : "direct";
+    const mode = manualDraft.claudeDesktopMode === "proxy" ? "proxy" : "direct";
     const roles = [
       {
         label: "Sonnet",
@@ -1916,7 +1990,9 @@ export function BetterGateToolConnectPage({
           <Input
             type="password"
             value={manualDraft.apiKey}
-            onChange={(event) => updateManualDraft("apiKey", event.target.value)}
+            onChange={(event) =>
+              updateManualDraft("apiKey", event.target.value)
+            }
           />
         </div>
         <div className="space-y-2">
@@ -1938,7 +2014,10 @@ export function BetterGateToolConnectPage({
           <Switch
             checked={mode === "proxy"}
             onCheckedChange={(checked) =>
-              updateManualDraft("claudeDesktopMode", checked ? "proxy" : "direct")
+              updateManualDraft(
+                "claudeDesktopMode",
+                checked ? "proxy" : "direct",
+              )
             }
           />
         </div>
@@ -1949,9 +2028,7 @@ export function BetterGateToolConnectPage({
               <Label>API 格式</Label>
               <Select
                 value={normalizeClaudeApiFormat(manualDraft.apiFormat)}
-                onValueChange={(value) =>
-                  updateManualDraft("apiFormat", value)
-                }
+                onValueChange={(value) => updateManualDraft("apiFormat", value)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -2100,15 +2177,14 @@ export function BetterGateToolConnectPage({
               id="manual-codex-provider-id"
               value={manualDraft.codexProviderId}
               onChange={(event) =>
-                updateManualDraft(
-                  "codexProviderId",
-                  event.target.value.trim(),
-                )
+                updateManualDraft("codexProviderId", event.target.value.trim())
               }
               placeholder="bettergate"
             />
             <p className="text-xs leading-5 text-neutral-400">
-              Codex 会按供应商名称区分会话记录。如果你从其他接入方式迁移，可以填回原来的名称，例如 custom；新用户保持默认即可。
+              Codex
+              会按供应商名称区分会话记录。如果你从其他接入方式迁移，可以填回原来的名称，例如
+              custom；新用户保持默认即可。
             </p>
           </div>
           <CodexFormFields
@@ -2320,11 +2396,14 @@ export function BetterGateToolConnectPage({
       await providersApi.switch(provider.id, tool.id);
       setImportedApiKeyIds(new Set([selectedApiKey.id]));
       setSelectedApiKeyId(selectedApiKey.id);
-      toast.success(`已应用到 ${tool.title}`, { closeButton: true });
+      toast.success(`已应用到 ${tool.title}`, {
+        description: `请重启 ${tool.title} 后使用。`,
+        closeButton: true,
+      });
       setIsManualDialogOpen(false);
       onComplete({
         configured: true,
-        name: provider.name || selectedApiKey.name || "Better Gate Key",
+        name: selectedApiKey.name || "Better Gate Key",
       });
     } catch (error) {
       console.error(
@@ -2360,8 +2439,8 @@ export function BetterGateToolConnectPage({
       : "创建新 Key 并接入";
 
   return (
-    <div className="flex h-full min-h-0 flex-col px-5 py-4">
-      <div className="flex h-10 items-center justify-between">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex h-9 items-center justify-between">
         <button
           type="button"
           onClick={onBack}
@@ -2389,7 +2468,7 @@ export function BetterGateToolConnectPage({
         </button>
       </div>
 
-      <div className="mt-3 flex h-[60px] items-center gap-3 rounded-xl px-3">
+      <div className="mt-2 flex h-[54px] items-center gap-2.5 rounded-xl px-2">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-100">
           {toolIcon}
         </span>
@@ -2405,8 +2484,8 @@ export function BetterGateToolConnectPage({
         </div>
       </div>
 
-      <div className="mt-2 min-h-0 flex-1 overflow-y-auto">
-        <div className="flex items-center justify-between gap-3 px-3 pb-1 pt-3">
+      <div className="mt-1 min-h-0 flex-1 overflow-y-auto">
+        <div className="flex items-center justify-between gap-3 px-2 pb-1 pt-2">
           <p className="text-xs font-medium text-neutral-400">API Key</p>
           <button
             type="button"
@@ -2448,47 +2527,61 @@ export function BetterGateToolConnectPage({
               );
 
               return (
-                <button
+                <div
                   key={apiKey.id}
-                  type="button"
-                  onClick={() => setSelectedApiKeyId(apiKey.id)}
                   className={cn(
-                    "flex h-[60px] w-full items-center gap-3 rounded-xl px-3 text-left transition",
+                    "grid h-[54px] grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 rounded-xl px-1.5 transition",
                     selected
                       ? "bg-neutral-50 dark:bg-neutral-800/70"
                       : "hover:bg-neutral-50 dark:hover:bg-neutral-800/50",
                   )}
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                    <KeyRound className="h-4 w-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-neutral-950 dark:text-neutral-50">
-                      {apiKey.name}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedApiKeyId(apiKey.id)}
+                    className="flex min-w-0 items-center gap-2 text-left"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                      <KeyRound className="h-3.5 w-3.5" />
                     </span>
-                    <span className="mt-0.5 block truncate text-xs text-neutral-400">
-                      {apiKey.keyPrefix} · {routeGroupLabel} ·{" "}
-                      {apiKeyDefaultModelLabel}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-semibold text-neutral-950 dark:text-neutral-50">
+                        {apiKey.name}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] text-neutral-400">
+                        {apiKey.keyPrefix} · {routeGroupLabel} ·{" "}
+                        {apiKeyDefaultModelLabel}
+                      </span>
                     </span>
-                  </span>
-                  {imported || !directImportable ? (
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-                        imported
-                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                          : apiKey.status === "ACTIVE"
-                            ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300"
-                            : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400",
-                      )}
+                  </button>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {imported || !directImportable ? (
+                      <span
+                        className={cn(
+                          "inline-flex h-6 shrink-0 items-center rounded-md px-1.5 text-[11px] font-medium",
+                          imported
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                            : apiKey.status === "ACTIVE"
+                              ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300"
+                              : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400",
+                        )}
+                      >
+                        {showCheck ? <Check className="mr-1 h-3 w-3" /> : null}
+                        {imported
+                          ? "已导入"
+                          : getBetterGateApiKeyStatus(apiKey)}
+                      </span>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => void handleOpenManualConfig(apiKey)}
+                      disabled={!directImportable || isBusy || isCreatingApiKey}
+                      className="inline-flex h-7 items-center rounded-md px-2 text-[11px] font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950 disabled:pointer-events-none disabled:opacity-40 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
                     >
-                      {imported ? "已导入" : getBetterGateApiKeyStatus(apiKey)}
-                    </span>
-                  ) : null}
-                  {showCheck ? (
-                    <Check className="h-4 w-4 shrink-0 text-neutral-950 dark:text-neutral-50" />
-                  ) : null}
-                </button>
+                      编辑
+                    </button>
+                  </div>
+                </div>
               );
             })
           ) : (
@@ -2528,42 +2621,24 @@ export function BetterGateToolConnectPage({
         <p className="truncate text-xs text-neutral-400">
           接入完成后，请重启 {tool.title}。
         </p>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void handleOpenManualConfig()}
-            className="h-10 rounded-xl px-4"
-            disabled={
-              isBusy ||
-              isCreatingApiKey ||
-              isLoadingWorkspaces ||
-              isLoadingApiKeys ||
-              !selectedWorkspace
-            }
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            自定义配置
-          </Button>
-          <Button
-            onClick={() => void handleImport()}
-            className="h-10 rounded-xl bg-neutral-950 px-5 text-white hover:bg-neutral-800 disabled:bg-neutral-300 dark:bg-neutral-50 dark:text-neutral-950 dark:hover:bg-neutral-200"
-            disabled={
-              isBusy ||
-              isCreatingApiKey ||
-              isLoadingWorkspaces ||
-              isLoadingApiKeys ||
-              !selectedWorkspace ||
-              (!selectedApiKey && !canCreateApiKey) ||
-              (Boolean(selectedApiKey) &&
-                !isBetterGateApiKeyDirectlyImportable(selectedApiKey) &&
-                !canCreateApiKey)
-            }
-          >
-            {isBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {primaryLabel}
-          </Button>
-        </div>
+        <Button
+          onClick={() => void handleImport()}
+          className="h-10 shrink-0 rounded-xl bg-neutral-950 px-5 text-white hover:bg-neutral-800 disabled:bg-neutral-300 dark:bg-neutral-50 dark:text-neutral-950 dark:hover:bg-neutral-200"
+          disabled={
+            isBusy ||
+            isCreatingApiKey ||
+            isLoadingWorkspaces ||
+            isLoadingApiKeys ||
+            !selectedWorkspace ||
+            (!selectedApiKey && !canCreateApiKey) ||
+            (Boolean(selectedApiKey) &&
+              !isBetterGateApiKeyDirectlyImportable(selectedApiKey) &&
+              !canCreateApiKey)
+          }
+        >
+          {isBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          {primaryLabel}
+        </Button>
       </div>
 
       <Dialog
@@ -2581,7 +2656,7 @@ export function BetterGateToolConnectPage({
           }
         }}
       >
-        <DialogContent className="max-w-[560px] rounded-2xl border-neutral-200 bg-white p-0 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+        <DialogContent className="max-w-[calc(100vw-28px)] rounded-2xl border-neutral-200 bg-white p-0 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
           <DialogHeader className="border-b-0 bg-transparent px-5 pb-2 pt-5">
             <DialogTitle className="text-base">自定义配置</DialogTitle>
             <DialogDescription className="text-xs leading-5">
@@ -2589,7 +2664,7 @@ export function BetterGateToolConnectPage({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="max-h-[520px] space-y-4 overflow-y-auto px-5 pb-5 pt-2">
+          <div className="max-h-[560px] space-y-4 overflow-y-auto px-4 pb-4 pt-2">
             {isLoadingManualSecret ? (
               <div className="flex h-28 items-center justify-center rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
                 <Loader2 className="h-5 w-5 animate-spin text-neutral-500" />
@@ -2680,7 +2755,7 @@ export function BetterGateToolConnectPage({
       </Dialog>
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-[420px] rounded-2xl border-neutral-200 bg-white p-0 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+        <DialogContent className="max-w-[calc(100vw-28px)] rounded-2xl border-neutral-200 bg-white p-0 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
           <DialogHeader className="border-b-0 bg-transparent px-5 pb-2 pt-5">
             <DialogTitle className="text-base">创建 API Key</DialogTitle>
             <DialogDescription className="text-xs leading-5">

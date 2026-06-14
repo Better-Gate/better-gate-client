@@ -771,69 +771,72 @@ export function ClaudeFormFields({
               <div className="flex items-center justify-between">
                 <FormLabel>{t("providerForm.modelMappingLabel")}</FormLabel>
                 {shouldShowModelActions ? (
-                <div className="flex gap-2">
-                  {/* 一键设置按钮 */}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const value =
-                        claudeModel ||
-                        defaultSonnetModel ||
-                        defaultOpusModel ||
-                        defaultHaikuModel;
-                      if (value) {
-                        for (const row of modelRoleRows) {
-                          const roleValue = row.supportsOneM
-                            ? value
-                            : stripClaudeOneMMarker(value);
-                          onModelChange(row.modelField, roleValue);
-                          onModelChange(
-                            row.displayNameField,
-                            stripClaudeOneMMarker(roleValue),
+                  <div className="flex gap-2">
+                    {/* 一键设置按钮 */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const value =
+                          claudeModel ||
+                          defaultSonnetModel ||
+                          defaultOpusModel ||
+                          defaultHaikuModel;
+                        if (value) {
+                          for (const row of modelRoleRows) {
+                            const roleValue = row.supportsOneM
+                              ? value
+                              : stripClaudeOneMMarker(value);
+                            onModelChange(row.modelField, roleValue);
+                            onModelChange(
+                              row.displayNameField,
+                              stripClaudeOneMMarker(roleValue),
+                            );
+                          }
+                          toast.success(
+                            t("providerForm.quickSetSuccess", {
+                              defaultValue: "已将模型名称应用到所有角色",
+                            }),
                           );
                         }
-                        toast.success(
-                          t("providerForm.quickSetSuccess", {
-                            defaultValue: "已将模型名称应用到所有角色",
-                          }),
-                        );
+                      }}
+                      disabled={
+                        !claudeModel &&
+                        !defaultHaikuModel &&
+                        !defaultSonnetModel &&
+                        !defaultOpusModel
                       }
-                    }}
-                    disabled={
-                      !claudeModel &&
-                      !defaultHaikuModel &&
-                      !defaultSonnetModel &&
-                      !defaultOpusModel
-                    }
-                    className="h-7 gap-1"
-                  >
-                    <Wand2 className="h-3.5 w-3.5" />
-                    {t("providerForm.quickSetModels", {
-                      defaultValue: "一键设置",
-                    })}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleModelFetchClick}
-                    disabled={modelFetchLoading}
-                    className="h-7 gap-1"
-                  >
-                    {modelFetchLoading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Download className="h-3.5 w-3.5" />
-                    )}
-                    {t("providerForm.fetchModels")}
-                  </Button>
-                </div>
+                      className="h-7 gap-1"
+                    >
+                      <Wand2 className="h-3.5 w-3.5" />
+                      {t("providerForm.quickSetModels", {
+                        defaultValue: "一键设置",
+                      })}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleModelFetchClick}
+                      disabled={modelFetchLoading}
+                      className="h-7 gap-1"
+                    >
+                      {modelFetchLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Download className="h-3.5 w-3.5" />
+                      )}
+                      {t("providerForm.fetchModels")}
+                    </Button>
+                  </div>
                 ) : null}
               </div>
               <p className="text-xs text-muted-foreground">
-                {t("providerForm.modelMappingHint")}
+                {t("providerForm.modelMappingHint", {
+                  defaultValue:
+                    "每一行对应 Claude Code 的一个模型角色：显示名称出现在 /model 菜单里；实际请求模型是发给 Better Gate 的模型 ID；1M 仅用于声明上下文能力，可不勾选。",
+                })}
               </p>
             </div>
 
@@ -874,34 +877,53 @@ export function ClaudeFormFields({
                     <div className="flex h-9 items-center rounded-md border border-input bg-muted px-3 text-sm font-medium text-muted-foreground">
                       {row.label}
                     </div>
-                    <Input
-                      value={row.displayName}
-                      onChange={(event) =>
-                        onModelChange(row.displayNameField, event.target.value)
-                      }
-                      placeholder={
-                        modelBase ||
-                        t("providerForm.modelDisplayNamePlaceholder", {
-                          defaultValue: "例如 DeepSeek V4 Pro",
-                        })
-                      }
-                      autoComplete="off"
-                    />
-                    {renderModelInput(
-                      row.inputId,
-                      modelBase,
-                      row.modelField,
-                      t("providerForm.modelPlaceholder", { defaultValue: "" }),
-                      (value) =>
-                        handleRoleModelChange(
-                          row,
-                          row.supportsOneM
-                            ? setClaudeOneMMarker(value, usesOneM)
-                            : stripClaudeOneMMarker(value),
-                        ),
-                    )}
+                    <div className="space-y-1.5">
+                      <span className="px-1 text-[11px] font-medium text-muted-foreground md:hidden">
+                        {t("providerForm.modelDisplayNameMobileLabel", {
+                          defaultValue: "显示给 Claude Code 的名称",
+                        })}
+                      </span>
+                      <Input
+                        value={row.displayName}
+                        onChange={(event) =>
+                          onModelChange(
+                            row.displayNameField,
+                            event.target.value,
+                          )
+                        }
+                        placeholder={
+                          modelBase ||
+                          t("providerForm.modelDisplayNamePlaceholder", {
+                            defaultValue: "例如 Claude Sonnet 4.6",
+                          })
+                        }
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <span className="px-1 text-[11px] font-medium text-muted-foreground md:hidden">
+                        {t("providerForm.requestModelMobileLabel", {
+                          defaultValue: "实际请求的模型 ID",
+                        })}
+                      </span>
+                      {renderModelInput(
+                        row.inputId,
+                        modelBase,
+                        row.modelField,
+                        t("providerForm.modelPlaceholder", {
+                          defaultValue: "",
+                        }),
+                        (value) =>
+                          handleRoleModelChange(
+                            row,
+                            row.supportsOneM
+                              ? setClaudeOneMMarker(value, usesOneM)
+                              : stripClaudeOneMMarker(value),
+                          ),
+                      )}
+                    </div>
                     {row.supportsOneM && (
-                      <label className="flex h-9 items-center gap-2 text-sm text-muted-foreground">
+                      <label className="flex h-9 items-center gap-2 text-sm text-muted-foreground md:pt-0">
                         <Checkbox
                           checked={usesOneM}
                           onCheckedChange={(checked) =>

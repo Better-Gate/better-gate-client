@@ -385,7 +385,23 @@ pub struct CodexChatReasoningConfig {
 
 /// 供应商元数据
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct BetterGateProviderMeta {
+    #[serde(rename = "userId")]
+    pub user_id: String,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: String,
+    #[serde(rename = "workspaceType")]
+    pub workspace_type: String,
+    #[serde(rename = "memberId", skip_serializing_if = "Option::is_none")]
+    pub member_id: Option<String>,
+    #[serde(rename = "apiKeyId")]
+    pub api_key_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProviderMeta {
+    #[serde(rename = "betterGate", skip_serializing_if = "Option::is_none")]
+    pub better_gate: Option<BetterGateProviderMeta>,
     /// 自定义端点列表（按 URL 去重存储）
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub custom_endpoints: HashMap<String, crate::settings::CustomEndpoint>,

@@ -20,14 +20,19 @@ import { exit } from "@tauri-apps/plugin-process";
 try {
   const ua = navigator.userAgent || "";
   const plat = (navigator.platform || "").toLowerCase();
-  const previewPlatform =
+  const previewParams =
     import.meta.env.DEV && typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("platform")
+      ? new URLSearchParams(window.location.search)
       : null;
+  const previewPlatform =
+    previewParams?.get("platform") ?? null;
   const isMac =
     previewPlatform === "mac" || /mac/i.test(ua) || plat.includes("mac");
   if (isMac) {
     document.body.classList.add("is-mac");
+  }
+  if (previewParams?.get("preview") === "dashboard") {
+    document.body.classList.add("is-bettergate-dashboard-preview");
   }
 } catch {
   // 忽略平台检测失败
