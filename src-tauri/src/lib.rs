@@ -162,15 +162,7 @@ pub fn run() {
 
             // Better Gate Desktop is account-login based and does not import via URL protocols.
             // A second launch should only focus the existing client window.
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.unminimize();
-                let _ = window.show();
-                let _ = window.set_focus();
-                #[cfg(target_os = "linux")]
-                {
-                    linux_fix::nudge_main_window(window.clone());
-                }
-            }
+            tray::show_main_window(app);
         }));
     }
 
@@ -684,6 +676,10 @@ pub fn run() {
                     // 鼠标悬停/点击到托盘图标时，后台异步刷新用量缓存，
                     // 让用户下一次（或快速打开菜单的那一刻）看到较新的数字。
                     // refresh_all_usage_in_tray 内部有 10 秒防抖。
+                    TrayIconEvent::DoubleClick { .. } => {
+                        let app = tray.app_handle().clone();
+                        crate::tray::show_main_window(&app);
+                    }
                     TrayIconEvent::Enter { .. } | TrayIconEvent::Click { .. } => {
                         let app = tray.app_handle().clone();
                         tauri::async_runtime::spawn(async move {
@@ -938,7 +934,7 @@ pub fn run() {
                     log::info!("静默启动模式：主窗口已隐藏");
                 } else {
                     // 正常启动模式：显示窗口
-                    let _ = window.show();
+                    tray::show_main_window(app.handle());
                     log::info!("正常启动模式：主窗口已显示");
 
                     // Linux: 解决首次启动 UI 无响应问题（Tauri #10746 + wry #637）。
