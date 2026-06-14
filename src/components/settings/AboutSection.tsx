@@ -425,7 +425,7 @@ export function AboutSection({ isPortable }: AboutSectionProps) {
     }
 
     try {
-      const available = await checkUpdate();
+      const available = await checkUpdate({ revealDismissed: true });
       if (!available) {
         toast.success(t("settings.upToDate"), { closeButton: true });
       }

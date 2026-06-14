@@ -571,7 +571,7 @@ export function SettingsPage({
         toast.info("预览模式不检查更新", { closeButton: true });
         return;
       }
-      const available = await checkUpdate();
+      const available = await checkUpdate({ revealDismissed: true });
       toast.success(available ? "发现新版本" : "当前已是最新版本", {
         closeButton: true,
       });

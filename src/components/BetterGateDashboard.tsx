@@ -962,7 +962,7 @@ export function BetterGateDashboard() {
         return;
       }
 
-      const available = await checkUpdate();
+      const available = await checkUpdate({ revealDismissed: true });
       toast.success(available ? "发现新版本" : "当前已是最新版本", {
         closeButton: true,
       });
