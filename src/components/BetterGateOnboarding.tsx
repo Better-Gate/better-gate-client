@@ -26,6 +26,7 @@ import {
   type BetterGateDesktopWorkspace,
 } from "@/lib/api/betterGateDesktop";
 import {
+  BETTER_GATE_CODEX_PROVIDER_NAME,
   getBetterGateApiKeyDefaultModel,
   normalizeBetterGateDefaultModel,
   normalizeBetterGateModelFamily,
@@ -422,7 +423,7 @@ model_reasoning_effort = "high"
 disable_response_storage = true
 
 [model_providers.bettergate]
-name = ${tomlString(providerName)}
+name = ${tomlString(BETTER_GATE_CODEX_PROVIDER_NAME)}
 base_url = ${tomlString(BETTER_GATE_OPENAI_BASE_URL)}
 wire_api = "responses"
 requires_openai_auth = true`,

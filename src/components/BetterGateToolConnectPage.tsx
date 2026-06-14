@@ -48,6 +48,7 @@ import {
 } from "@/config/hermesProviderPresets";
 import { copyText } from "@/lib/clipboard";
 import {
+  BETTER_GATE_CODEX_PROVIDER_NAME,
   createBetterGateProvider,
   getBetterGateApiKeyStatus,
   getBetterGateDefaultKeyName,
@@ -391,7 +392,13 @@ function normalizeClaudeApiKeyField(value: string): ClaudeApiKeyField {
 }
 
 function normalizeCodexProviderId(value: string) {
-  return value.trim() || "bettergate";
+  return value.trim() || BETTER_GATE_CODEX_PROVIDER_NAME;
+}
+
+function getCodexProviderDisplayName(providerId: string, providerName: string) {
+  return providerId === BETTER_GATE_CODEX_PROVIDER_NAME
+    ? BETTER_GATE_CODEX_PROVIDER_NAME
+    : providerName;
 }
 
 function isValidCodexProviderId(value: string) {
@@ -456,7 +463,10 @@ function createManualConfigDraft(input: {
 
   return {
     providerKey,
-    providerName: input.keyName || "Better Gate",
+    providerName:
+      input.toolId === "codex"
+        ? BETTER_GATE_CODEX_PROVIDER_NAME
+        : input.keyName || "Better Gate",
     baseUrl: getBetterGateToolBaseUrl(input.toolId),
     apiKey: input.secret,
     primaryModel,
@@ -487,7 +497,7 @@ function createManualConfigDraft(input: {
     hermesModels: JSON.stringify(openModels, null, 2),
     hermesRateLimitDelay: "",
     geminiConfig: "{}",
-    codexProviderId: "bettergate",
+    codexProviderId: BETTER_GATE_CODEX_PROVIDER_NAME,
     codexModelCatalog: JSON.stringify(
       [
         {
@@ -663,7 +673,10 @@ export function buildManualConfig(input: {
   restartHint: string;
 } {
   const baseUrl = getBetterGateToolBaseUrl(input.toolId);
-  const providerName = input.keyName || "Better Gate";
+  const providerName =
+    input.toolId === "codex"
+      ? BETTER_GATE_CODEX_PROVIDER_NAME
+      : input.keyName || "Better Gate";
   const commonFields: ManualConfigField[] = [
     { label: "名称", value: providerName },
     { label: "Base URL", value: baseUrl },
@@ -687,7 +700,7 @@ model_reasoning_effort = "high"
 disable_response_storage = true
 
 [model_providers.bettergate]
-name = ${quoted(providerName)}
+name = ${quoted(BETTER_GATE_CODEX_PROVIDER_NAME)}
 base_url = ${quoted(baseUrl)}
 wire_api = "responses"
 requires_openai_auth = true`,
@@ -911,6 +924,10 @@ function buildEditableManualConfig(input: {
   const geminiConfig =
     parseJsonRecord(input.draft.geminiConfig, "Gemini 扩展配置", false) ?? {};
   const codexProviderId = normalizeCodexProviderId(input.draft.codexProviderId);
+  const codexProviderDisplayName = getCodexProviderDisplayName(
+    codexProviderId,
+    providerName,
+  );
   const codexModelCatalog =
     parseJsonArray(input.draft.codexModelCatalog, "Codex 模型目录", false) ??
     [];
@@ -932,7 +949,7 @@ model_reasoning_effort = ${quoted(DEFAULT_CODEX_REASONING_EFFORT)}
 disable_response_storage = true
 
 [model_providers.${codexProviderId}]
-name = ${quoted(providerName)}
+name = ${quoted(codexProviderDisplayName)}
 base_url = ${quoted(baseUrl)}
 wire_api = "responses"
 requires_openai_auth = true`,
@@ -1193,6 +1210,10 @@ function createBetterGateProviderFromManualDraft(input: {
   const geminiConfig =
     parseJsonRecord(input.draft.geminiConfig, "Gemini 扩展配置") ?? {};
   const codexProviderId = normalizeCodexProviderId(input.draft.codexProviderId);
+  const codexProviderDisplayName = getCodexProviderDisplayName(
+    codexProviderId,
+    providerName,
+  );
   const codexModelCatalog =
     parseJsonArray(input.draft.codexModelCatalog, "Codex 模型目录") ?? [];
   const provider = createBetterGateProvider({
@@ -1243,7 +1264,7 @@ model_reasoning_effort = ${quoted(DEFAULT_CODEX_REASONING_EFFORT)}
 disable_response_storage = true
 
 [model_providers.${codexProviderId}]
-name = ${quoted(providerName)}
+name = ${quoted(codexProviderDisplayName)}
 base_url = ${quoted(baseUrl)}
 wire_api = "responses"
 requires_openai_auth = true`,
