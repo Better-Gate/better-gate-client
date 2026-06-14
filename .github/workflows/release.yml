@@ -336,15 +336,15 @@ jobs:
           body: |
             ## Better Gate ${{ github.ref_name }}
 
-            Better Gate 桌面客户端内测版本。
+            Desktop client release for Better Gate.
 
-            ### 下载
+            ### Downloads
 
-            - macOS: `Better-Gate-${{ github.ref_name }}-macOS.dmg` 或 `Better-Gate-${{ github.ref_name }}-macOS.zip`
+            - macOS: `Better-Gate-${{ github.ref_name }}-macOS.dmg` or `Better-Gate-${{ github.ref_name }}-macOS.zip`
             - Windows: `Better-Gate-${{ github.ref_name }}-Windows.msi`
             - Linux: `Better-Gate-${{ github.ref_name }}-Linux-x86_64.AppImage`
 
-            macOS 当前可使用未签名内测包。首次打开如被系统拦截，请在系统设置的“隐私与安全性”中选择仍要打开。
+            If the macOS build is unsigned, users may need to allow it from System Settings.
           files: |
             release-assets/*
             latest.json

@@ -93,6 +93,7 @@ function AuthCloseButton() {
 
 export function BetterGateLoginGate({ children }: BetterGateLoginGateProps) {
   const pollRunRef = useRef(0);
+  const verificationUriRef = useRef<string | null>(null);
   const [authState, setAuthState] = useState<AuthState>("checking");
   const [user, setUser] = useState<BetterGateDesktopUser | null>(null);
   const [userCode, setUserCode] = useState<string | null>(null);
@@ -215,10 +216,12 @@ export function BetterGateLoginGate({ children }: BetterGateLoginGateProps) {
     setAuthState("waiting");
     setUserCode(null);
     setErrorMessage(null);
+    verificationUriRef.current = null;
 
     try {
       const started = await startBetterGateDesktopLogin(getBetterGateSaasUrl());
       setUserCode(started.userCode);
+      verificationUriRef.current = started.verificationUri;
       await settingsApi.openExternal(started.verificationUri);
 
       const timeoutAt = Date.now() + started.expiresIn * 1000;
@@ -249,11 +252,37 @@ export function BetterGateLoginGate({ children }: BetterGateLoginGateProps) {
 
       throw new Error("Login expired");
     } catch (error) {
+      if (pollRunRef.current !== currentRun) {
+        return;
+      }
+
       console.error("[BetterGateLoginGate] login failed", error);
       setAuthState("error");
-      setErrorMessage("登录未完成，请在网页中确认授权后重试。");
+      setUserCode(null);
+      verificationUriRef.current = null;
+      const message =
+        error instanceof Error && error.message === "Login expired"
+          ? "授权已过期，请重新登录。"
+          : "登录未完成，请在网页中确认授权后重试。";
+      setErrorMessage(message);
       toast.error("Better Gate 登录失败", { closeButton: true });
     }
+  };
+
+  const reopenAuthorizationPage = () => {
+    if (!verificationUriRef.current) {
+      return;
+    }
+
+    void settingsApi.openExternal(verificationUriRef.current);
+  };
+
+  const restartLogin = () => {
+    pollRunRef.current += 1;
+    setUserCode(null);
+    setErrorMessage(null);
+    verificationUriRef.current = null;
+    void handleLogin();
   };
 
   const handleTermsClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -278,7 +307,7 @@ export function BetterGateLoginGate({ children }: BetterGateLoginGateProps) {
     return children;
   }
 
-  const isBusy = authState === "waiting" || authState === "checking";
+  const isChecking = authState === "checking";
 
   return (
     <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-white text-neutral-950">
@@ -302,19 +331,29 @@ export function BetterGateLoginGate({ children }: BetterGateLoginGateProps) {
 
         <Button
           className="mt-7 h-11 w-full rounded-xl bg-neutral-950 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-800"
-          onClick={handleLogin}
-          disabled={isBusy}
+          onClick={authState === "waiting" ? reopenAuthorizationPage : handleLogin}
+          disabled={isChecking}
         >
-          {isBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {authState === "waiting" ? "等待网页授权" : "登录以继续"}
+          {isChecking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          {authState === "waiting" ? "重新打开授权页" : "登录以继续"}
         </Button>
 
         {authState === "waiting" ? (
           <div className="mt-4 w-full rounded-xl bg-neutral-50 px-4 py-3 text-sm leading-6 text-neutral-600">
-            请在浏览器中完成授权
-            {userCode ? (
-              <span className="font-medium">，授权码 {userCode}</span>
-            ) : null}
+            <div>
+              请在浏览器中完成授权
+              {userCode ? (
+                <span className="font-medium">，授权码 {userCode}</span>
+              ) : null}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              className="mt-2 h-8 px-2 text-xs text-neutral-700 hover:bg-neutral-100"
+              onClick={restartLogin}
+            >
+              重新登录
+            </Button>
           </div>
         ) : null}
 
