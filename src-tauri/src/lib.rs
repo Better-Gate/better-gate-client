@@ -60,7 +60,7 @@ use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
 use std::sync::Arc;
 use tauri::image::Image;
-use tauri::tray::{TrayIconBuilder, TrayIconEvent};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::Manager;
 use tauri::RunEvent;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
@@ -680,6 +680,17 @@ pub fn run() {
                         let app = tray.app_handle().clone();
                         crate::tray::show_main_window(&app);
                     }
+                    TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } => {
+                        let app = tray.app_handle().clone();
+                        crate::tray::show_main_window(&app);
+                        tauri::async_runtime::spawn(async move {
+                            crate::tray::refresh_all_usage_in_tray(&app).await;
+                        });
+                    }
                     TrayIconEvent::Enter { .. } | TrayIconEvent::Click { .. } => {
                         let app = tray.app_handle().clone();
                         tauri::async_runtime::spawn(async move {
@@ -692,7 +703,7 @@ pub fn run() {
                 .on_menu_event(|app, event| {
                     tray::handle_tray_menu_event(app, &event.id.0);
                 })
-                .show_menu_on_left_click(true);
+                .show_menu_on_left_click(false);
 
             // Use the same white-background mark across the app icon and tray icon.
             #[cfg(target_os = "macos")]
